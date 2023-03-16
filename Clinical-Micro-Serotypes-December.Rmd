@@ -1,0 +1,1059 @@
+---
+title: "Clinical Micro Monthly Report December: Serotypes"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  classoption: landscape
+header-includes:
+- \usepackage{titling}
+- \usepackage{wrapfig}
+- \usepackage{lipsum}
+- \pretitle{\begin{center} \includegraphics[width=2in,height=2in]{1200px-MassDPH_svg.png}\LARGE\\}
+- \posttitle{\end{center}}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#Load in Libraries
+library(readxl)
+library(plyr)
+library(dplyr)
+library(arsenal)
+library(ggplot2)
+library(writexl)
+library(openxlsx)
+library(lubridate) 
+library(data.table)
+library(kableExtra)
+library(knitr)
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_knit$set(root.dir= normalizePath('..'))
+knitr::opts_chunk$set(error = FALSE)
+library(tidyr)
+library(janitor)
+library(scales)
+library(kableExtra)
+library(tinytex)
+library(yaml)
+library(ggpubr)
+library(cowplot)
+library(formattable)
+library(treemap)
+library(viridis)
+library(tidyverse)
+
+
+```
+
+```{r, include = F}
+defOut <- knitr::knit_hooks$get("plot")  # save the default plot hook 
+knitr::knit_hooks$set(plot = function(x, options) {  # set new plot hook ...
+  x <- defOut(x, options)  # first apply the default hook
+  if(!is.null(options$wrapfigure)) {  # then, if option wrapfigure is given ...
+    # create the new opening string for the wrapfigure environment ...
+    wf <- sprintf("\\begin{wrapfigure}{%s}{%g\\textwidth}", options$wrapfigure[[1]], options$wrapfigure[[2]])
+    x  <- gsub("\\begin{figure}", wf, x, fixed = T)  # and replace the default one with it.
+    x  <- gsub("{figure}", "{wrapfigure}", x, fixed = T)  # also replace the environment ending
+  }
+  return(x)
+})
+```
+
+```{r read in data, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+Master20to22<-read_excel(here::here("J:/Clinical Microbiology/Monthly Numbers/2022/12 December/Data","Master_Disease_Found_Sero.xlsx")) #back to 2020
+Master20to22 <- Master20to22[(Master20to22$`Report Status` == "Final"),]
+Master20to22 <- Master20to22[(Master20to22$Submitter != 'STATE LABORATORY INSTITUTE'), ]
+
+Nmeningitidis <- Master20to22[(Master20to22$`Dis Code Ordered` == "N. meningitidis"),]
+Nmeningitidis$resyr <- data.table::year(as.POSIXlt(Nmeningitidis$`Releasedate`, format="%m-%d-%Y"))
+
+Hinfluenzae <- Master20to22[(Master20to22$`Dis Code Ordered` == "H. influenzae"),]
+Hinfluenzae$resyr <- data.table::year(as.POSIXlt(Hinfluenzae$`Releasedate`, format="%m-%d-%Y"))
+
+Shigella <- Master20to22[(Master20to22$`Dis Code Ordered` == "Shigella"),]
+Shigella$resyr <- data.table::year(as.POSIXlt(Shigella$`Releasedate`, format="%m-%d-%Y"))
+
+Legionella <- Master20to22[(Master20to22$`Dis Code Ordered` == "Legionella"),]
+Legionella$resyr <- data.table::year(as.POSIXlt(Legionella$`Releasedate`, format="%m-%d-%Y"))
+
+Campylobacter <- Master20to22[(Master20to22$`Dis Code Ordered` == "Campylobacter"),]
+Campylobacter$resyr <- data.table::year(as.POSIXlt(Campylobacter$`Releasedate`, format="%m-%d-%Y"))
+
+STEC <- Master20to22[(Master20to22$`Dis Code Ordered` == "STEC"),]
+STEC$resyr <- data.table::year(as.POSIXlt(STEC$`Releasedate`, format="%m-%d-%Y"))
+
+Bordetella <- Master20to22[(Master20to22$`Dis Code Ordered` == "Bordetella"),]
+Bordetella$resyr <- data.table::year(as.POSIXlt(Bordetella$`Releasedate`, format="%m-%d-%Y"))
+
+Yersinia <- Master20to22[(Master20to22$`Dis Code Ordered` == "Yersinia"),]
+Yersinia$resyr <- data.table::year(as.POSIXlt(Yersinia$`Releasedate`, format="%m-%d-%Y"))
+
+Vibrio <- Master20to22[(Master20to22$`Dis Code Ordered` == "Vibrio"),]
+Vibrio$resyr <- data.table::year(as.POSIXlt(Vibrio$`Releasedate`, format="%m-%d-%Y"))
+
+Salmonella <- Master20to22[(Master20to22$`Dis Code Ordered` == "Salmonella"),]
+Salmonella$resyr <- data.table::year(as.POSIXlt(Salmonella$`Releasedate`, format="%m-%d-%Y"))
+
+Gonorrhea <- Master20to22[(Master20to22$`Dis Code Ordered` == "Gonorrhea Culture"),]
+Gonorrhea$resyr <- data.table::year(as.POSIXlt(Gonorrhea$`Releasedate`, format="%m-%d-%Y"))
+
+Screening <- Master20to22[(Master20to22$`Dis Code Ordered` == "Screening"),]
+Screening$resyr <- data.table::year(as.POSIXlt(Screening$`Releasedate`, format="%m-%d-%Y"))
+
+```
+
+\pagebreak
+
+# Bordetella
+
+## Positivity
+
+```{r bo positives, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+Bordetella <- Bordetella %>%             
+  mutate(Indication = as.factor(Indication))
+Bordetella <- Bordetella %>%             
+  mutate(resyr = as.factor(resyr))
+
+Bordetella2 <- Bordetella[!duplicated(Bordetella$`Lab No`),]
+Bordetella2$Indication <- Bordetella2$Indication
+Bordetella2$resyr <- Bordetella2$resyr
+
+Bordetella_prop <- as.data.frame(table(Bordetella2$Indication,Bordetella2$resyr))
+names(Bordetella_prop)[1]<-'Indication'
+names(Bordetella_prop)[2]<-'Year'
+names(Bordetella_prop)[3]<-'Count'
+
+Bordetella_prop$Count <- as.numeric(Bordetella_prop$Count)
+
+Bordetella_pos <- as.data.frame(table(Bordetella2$Indication,Bordetella2$resyr))
+Bordetella_pos <-reshape(Bordetella_pos, idvar= 'Var1', timevar='Var2', direction="wide")
+names(Bordetella_pos)[1]<-'Indication'
+names(Bordetella_pos)[2]<-'2020'
+names(Bordetella_pos)[3]<-'2021'
+names(Bordetella_pos)[4]<-'2022'
+
+ggplot(Bordetella_prop, aes(fill=Indication, y=Count, x=Year)) + 
+    geom_bar(position="stack", stat="identity", colour="black") + scale_y_continuous(breaks=seq(0, 540, 10)) +  theme_bw() + xlab("Year") + ylab("Count of Samples") + ggtitle("Count of Bordetella Samples by 'Indication'") + theme(aspect.ratio=2/1)
+
+```
+
+```{r bo positives 2, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+kbl(Bordetella_pos, booktabs = T) %>% kable_styling(full_width = F) %>%
+  kable_styling(font_size = 12)%>%
+  kable_styling(latex_options = "HOLD_position")
+
+```
+
+\pagebreak
+
+## Serotypes 
+
+
+```{r bo serotypes, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+positivebo <- filter(Bordetella2, Indication == "Positive")
+positivebo$serotype <- ifelse(positivebo$`Dis Code Found`=="Bordetella pertussis was found", "Bordetella pertussis", 
+                                ifelse(positivebo$`Dis Code Found`=="Bordetella parapertussis was found", "Bordetella parapertussis",
+                                       ifelse(positivebo$`Dis Code Found`=="Bordetella bronchiseptica found", "Bordetella bronchiseptica", 
+                                              ifelse(positivebo$`Dis Code Found`=="Bordetella holmesii was found", "Bordetella holmesii", "No serotype"))))
+
+Bordetella_prop2 <- as.data.frame(table(positivebo$serotype,positivebo$resyr))
+
+names(Bordetella_prop2)[1]<-'Serotype'
+names(Bordetella_prop2)[2]<-'Year'
+names(Bordetella_prop2)[3]<-'Count'
+
+
+ggplot(Bordetella_prop2, aes(fill=Serotype, y=Count, x=Year)) + scale_fill_viridis(discrete=TRUE)+
+  geom_bar(position="stack", stat="identity", colour="black") + theme_bw() + xlab("Year") + ylab("Count of Samples") + ggtitle("Count of Positive Bordetella Samples by Serotype") + 
+  theme(aspect.ratio=2/1)
+
+```
+
+```{r bo prop 2, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+Bordetella_prop3 <- as.data.frame(table(positivebo$serotype,positivebo$resyr))
+Bordetella_prop3 <-reshape(Bordetella_prop3, idvar= 'Var1', timevar='Var2', direction="wide")
+names(Bordetella_prop3)[1]<-'Serotype'
+names(Bordetella_prop3)[2]<-'2020'
+names(Bordetella_prop3)[3]<-'2021'
+names(Bordetella_prop3)[4]<-'2022'
+
+summary(freqlist(~ serotype, data = positivebo))
+```
+
+Frequencies across all 3 years:
+```{r bo prop 3, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+kbl(Bordetella_prop3, booktabs = T) %>% kable_styling(full_width = F) %>%
+  kable_styling(font_size = 12)%>%
+  kable_styling(latex_options = "HOLD_position")
+
+```
+
+
+\pagebreak
+
+# Campylobacter 
+
+## Positivity
+
+```{r campy positives, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+Campylobacter <- Campylobacter %>%             
+  mutate(Indication = as.factor(Indication))
+Campylobacter <- Campylobacter %>%             
+  mutate(resyr = as.factor(resyr))
+
+Campylobacter2 <- Campylobacter[!duplicated(Campylobacter$`Lab No`),]
+Campylobacter2$Indication <- Campylobacter2$Indication
+Campylobacter2$resyr <- Campylobacter2$resyr
+
+Campylobacter_prop <- as.data.frame(table(Campylobacter2$Indication,Campylobacter2$resyr))
+names(Campylobacter_prop)[1]<-'Indication'
+names(Campylobacter_prop)[2]<-'Year'
+names(Campylobacter_prop)[3]<-'Count'
+
+Campylobacter_prop$Count <- as.numeric(Campylobacter_prop$Count)
+
+Campylobacter_pos <- as.data.frame(table(Campylobacter2$Indication,Campylobacter2$resyr))
+Campylobacter_pos <-reshape(Campylobacter_pos, idvar= 'Var1', timevar='Var2', direction="wide")
+names(Campylobacter_pos)[1]<-'Indication'
+names(Campylobacter_pos)[2]<-'2020'
+names(Campylobacter_pos)[3]<-'2021'
+names(Campylobacter_pos)[4]<-'2022'
+
+ggplot(Campylobacter_prop, aes(fill=Indication, y=Count, x=Year)) + 
+    geom_bar(position="stack", stat="identity", colour="black") + scale_y_continuous(breaks=seq(0, 1300, 50)) +  theme_bw() + xlab("Year") + ylab("Count of Samples") + ggtitle("Count of Campylobacter Samples by 'Indication'") + theme(aspect.ratio=2.5/1)
+
+
+```
+
+```{r campy positives 2, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+kbl(Campylobacter_pos, booktabs = T) %>% kable_styling(full_width = F) %>%
+  kable_styling(font_size = 12)%>%
+  kable_styling(latex_options = "HOLD_position")
+
+```
+
+## Serotypes
+
+```{r campy serotypes, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+positivecampy <- filter(Campylobacter2, Indication == "Positive")
+positivecampy <- filter(positivecampy, `Dis Code Found` != "Isolate not tested: Please see Comment")
+
+positivecampy$`Dis Code Found`[positivecampy$`Dis Code Found` == 'Probable Campylobacter species.'] <- 'Probable Campylobacter species'
+
+positivecampy$serotype <- positivecampy$`Dis Code Found`
+
+Campylobacter_prop2 <- as.data.frame(table(positivecampy$serotype,positivecampy$resyr))
+
+names(Campylobacter_prop2)[1]<-'Serotype'
+names(Campylobacter_prop2)[2]<-'Year'
+names(Campylobacter_prop2)[3]<-'Count'
+
+
+ggplot(Campylobacter_prop2, aes(fill=Serotype, y=Count, x=Year)) + scale_fill_viridis(discrete=TRUE)+
+  geom_bar(position="stack", stat="identity", colour="black") + scale_y_continuous(breaks=seq(0, 1300, 50)) +
+  theme_bw() + xlab("Year") + ylab("Count of Samples") + ggtitle("Count of Positive Campylobacter Samples by Serotype") + 
+  theme(aspect.ratio=2.5/1)
+
+```
+
+
+```{r campy prop 2, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+Campy_prop3 <- as.data.frame(table(positivecampy$serotype,positivecampy$resyr))
+Campy_prop3 <-reshape(Campy_prop3, idvar= 'Var1', timevar='Var2', direction="wide")
+names(Campy_prop3)[1]<-'Serotype'
+names(Campy_prop3)[2]<-'2020'
+names(Campy_prop3)[3]<-'2021'
+names(Campy_prop3)[4]<-'2022'
+
+kbl(Campy_prop3, booktabs = T) %>% kable_styling(full_width = F) %>%
+  kable_styling(font_size = 12)%>%
+  kable_styling(latex_options = "HOLD_position")
+
+```
+
+Frequencies across all 3 years:
+```{r campy prop 3, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+summary(freqlist(~ serotype, data = positivecampy))
+
+```
+
+\pagebreak
+
+# Gonorrhea
+
+## Positivity 
+
+```{r gon positives, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+Gonorrhea <- Gonorrhea %>%             
+  mutate(Indication = as.factor(Indication))
+Gonorrhea <- Gonorrhea %>%             
+  mutate(resyr = as.factor(resyr))
+
+Gonorrhea2 <- Gonorrhea[!duplicated(Gonorrhea$`Lab No`),]
+Gonorrhea2$Indication <- Gonorrhea2$Indication
+Gonorrhea2$resyr <- Gonorrhea2$resyr
+
+Gonorrhea_prop <- as.data.frame(table(Gonorrhea2$Indication,Gonorrhea2$resyr))
+names(Gonorrhea_prop)[1]<-'Indication'
+names(Gonorrhea_prop)[2]<-'Year'
+names(Gonorrhea_prop)[3]<-'Count'
+
+Gonorrhea_prop$Count <- as.numeric(Gonorrhea_prop$Count)
+
+Gonorrhea_pos <- as.data.frame(table(Gonorrhea2$Indication,Gonorrhea2$resyr))
+Gonorrhea_pos <-reshape(Gonorrhea_pos, idvar= 'Var1', timevar='Var2', direction="wide")
+names(Gonorrhea_pos)[1]<-'Indication'
+names(Gonorrhea_pos)[2]<-'2020'
+names(Gonorrhea_pos)[3]<-'2021'
+names(Gonorrhea_pos)[4]<-'2022'
+
+ggplot(Gonorrhea_prop, aes(fill=Indication, y=Count, x=Year)) + 
+    geom_bar(position="stack", stat="identity", colour="black") + scale_y_continuous(breaks=seq(0, 2000, 100)) +  theme_bw() + xlab("Year") + ylab("Count of Samples") + ggtitle("Count of Gonorrhea Samples by 'Indication'") + theme(aspect.ratio=2/1)
+
+
+```
+
+
+```{r gon positives 2, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+kbl(Gonorrhea_pos, booktabs = T) %>% kable_styling(full_width = F) %>%
+  kable_styling(font_size = 12)%>%
+  kable_styling(latex_options = "HOLD_position")
+
+```
+
+## Serotypes
+
+No serotypes indicated for Gonorrhea samples.
+
+\pagebreak
+
+# H influenzae
+
+## Positivity
+
+```{r h inf positives, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+Hinfluenzae <- Hinfluenzae %>%             
+  mutate(Indication = as.factor(Indication))
+Hinfluenzae <- Hinfluenzae %>%             
+  mutate(resyr = as.factor(resyr))
+
+Hinfluenzae2 <- Hinfluenzae[!duplicated(Hinfluenzae$`Lab No`),]
+Hinfluenzae2$Indication <- Hinfluenzae2$Indication
+Hinfluenzae2$resyr <- Hinfluenzae2$resyr
+
+Hinfluenzae_prop <- as.data.frame(table(Hinfluenzae2$Indication,Hinfluenzae2$resyr))
+names(Hinfluenzae_prop)[1]<-'Indication'
+names(Hinfluenzae_prop)[2]<-'Year'
+names(Hinfluenzae_prop)[3]<-'Count'
+
+Hinfluenzae_prop$Count <- as.numeric(Hinfluenzae_prop$Count)
+
+Hinfluenzae_pos <- as.data.frame(table(Hinfluenzae2$Indication,Hinfluenzae2$resyr))
+Hinfluenzae_pos <-reshape(Hinfluenzae_pos, idvar= 'Var1', timevar='Var2', direction="wide")
+names(Hinfluenzae_pos)[1]<-'Indication'
+names(Hinfluenzae_pos)[2]<-'2020'
+names(Hinfluenzae_pos)[3]<-'2021'
+names(Hinfluenzae_pos)[4]<-'2022'
+
+ggplot(Hinfluenzae_prop, aes(fill=Indication, y=Count, x=Year)) + 
+    geom_bar(position="stack", stat="identity", colour="black") + scale_y_continuous(breaks=seq(0, 130, 5)) +  theme_bw() + xlab("Year") + ylab("Count of Samples") + ggtitle("Count of H. influenzae Samples by 'Indication'") + theme(aspect.ratio=2/1)
+
+```
+
+
+
+```{r h inf positives 2, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+kbl(Hinfluenzae_pos, booktabs = T) %>% kable_styling(full_width = F) %>%
+  kable_styling(font_size = 12)%>%
+  kable_styling(latex_options = "HOLD_position")
+
+```
+
+\pagebreak
+
+## Serotypes
+```{r h inf serotypes, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+positivehinf <- filter(Hinfluenzae2, Indication == "Positive")
+positivehinf$serotype <- ifelse(positivehinf$`Dis Code Found`=="Haemophilus influenzae nontypable was found", "Nontypable", 
+                                ifelse(positivehinf$`Dis Code Found`=="Haemophilus influenzae serotype a was found", "Serotype A",
+                                       ifelse(positivehinf$`Dis Code Found`=="Haemophilus influenzae serotype b was found", "Serotype B", 
+                                              ifelse(positivehinf$`Dis Code Found`=="Haemophilus influenzae serotype d was found", "Serotype D",
+                                                     ifelse(positivehinf$`Dis Code Found`=="Haemophilus influenzae serotype e was found","Serotype E", 
+                                                            ifelse(positivehinf$`Dis Code Found`=="Haemophilus influenzae serotype f was found","Serotype F", "No serotype" ))))))
+
+Hinfluenzae_prop2 <- as.data.frame(table(positivehinf$serotype,positivehinf$resyr))
+
+names(Hinfluenzae_prop2)[1]<-'Serotype'
+names(Hinfluenzae_prop2)[2]<-'Year'
+names(Hinfluenzae_prop2)[3]<-'Count'
+
+
+ggplot(Hinfluenzae_prop2, aes(fill=Serotype, y=Count, x=Year)) + scale_fill_viridis(discrete=TRUE)+
+  geom_bar(position="stack", stat="identity", colour="black") + scale_y_continuous(breaks=seq(0, 130, 5)) +
+  theme_bw() + xlab("Year") + ylab("Count of Samples") + ggtitle("Count of Positive H. influenzae Samples by Serotype") + 
+  theme(aspect.ratio=5/2)
+
+```
+
+```{r h inf prop 2, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+Hinfluenzae_prop3 <- as.data.frame(table(positivehinf$serotype,positivehinf$resyr))
+Hinfluenzae_prop3 <-reshape(Hinfluenzae_prop3, idvar= 'Var1', timevar='Var2', direction="wide")
+names(Hinfluenzae_prop3)[1]<-'Serotype'
+names(Hinfluenzae_prop3)[2]<-'2020'
+names(Hinfluenzae_prop3)[3]<-'2021'
+names(Hinfluenzae_prop3)[4]<-'2022'
+
+kbl(Hinfluenzae_prop3, booktabs = T) %>% kable_styling(full_width = F) %>%
+  kable_styling(font_size = 12)%>%
+  kable_styling(latex_options = "HOLD_position")
+
+```
+
+Frequencies across all 3 years:
+```{r h inf prop 3, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+summary(freqlist(~ serotype, data = positivehinf))
+
+```
+
+\pagebreak
+
+# Legionella
+
+## Positivity
+
+```{r  leg positives, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+Legionella <- Legionella %>%             
+  mutate(Indication = as.factor(Indication))
+Legionella <- Legionella %>%             
+  mutate(resyr = as.factor(resyr))
+
+Legionella2 <- Legionella[!duplicated(Legionella$`Lab No`),]
+Legionella2$Indication <- Legionella2$Indication
+Legionella2$resyr <- Legionella2$resyr
+
+Legionella_prop <- as.data.frame(table(Legionella2$Indication,Legionella2$resyr))
+names(Legionella_prop)[1]<-'Indication'
+names(Legionella_prop)[2]<-'Year'
+names(Legionella_prop)[3]<-'Count'
+
+Legionella_prop$Count <- as.numeric(Legionella_prop$Count)
+
+Legionella_pos <- as.data.frame(table(Legionella2$Indication,Legionella2$resyr))
+Legionella_pos <-reshape(Legionella_pos, idvar= 'Var1', timevar='Var2', direction="wide")
+names(Legionella_pos)[1]<-'Indication'
+names(Legionella_pos)[2]<-'2020'
+names(Legionella_pos)[3]<-'2021'
+names(Legionella_pos)[4]<-'2022'
+
+ggplot(Legionella_prop, aes(fill=Indication, y=Count, x=Year)) + 
+    geom_bar(position="stack", stat="identity", colour="black") + scale_y_continuous(breaks=seq(0, 130, 10)) +  theme_bw() + xlab("Year") + ylab("Count of Samples") + ggtitle("Count of Legionella Samples by 'Indication'") + theme(aspect.ratio=2/1)
+
+```
+
+
+```{r  leg positives 2, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+kbl(Legionella_pos, booktabs = T) %>% kable_styling(full_width = F) %>%
+  kable_styling(font_size = 12)%>%
+  kable_styling(latex_options = "HOLD_position")
+
+```
+
+\pagebreak
+
+## Serotypes
+
+```{r leg serotypes, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+positiveleg <- filter(Legionella2, Indication == "Positive")
+positiveleg$serotype <- ifelse(positiveleg$`Dis Code Found`=="Legionella pneumophila not serogroup 1 was found.", 
+                                "Legionella pneumophila not serogroup 1",
+                                ifelse(positiveleg$`Dis Code Found`=="Legionella pneumophila serogroup 1 was found", 
+                                       "Legionella pneumophila serogroup 1",
+                                       ifelse(positiveleg$`Dis Code Found`=="Legionella species was found.", "Legionella species", 
+                                              "No serotype")))
+
+Legionella_prop2 <- as.data.frame(table(positiveleg$serotype,positiveleg$resyr))
+
+names(Legionella_prop2)[1]<-'Serotype'
+names(Legionella_prop2)[2]<-'Year'
+names(Legionella_prop2)[3]<-'Count'
+
+
+ggplot(Legionella_prop2, aes(fill=Serotype, y=Count, x=Year)) + scale_fill_viridis(discrete=TRUE)+
+  geom_bar(position="stack", stat="identity", colour="black") + scale_y_continuous(breaks=seq(0, 15, 2)) +
+  theme_bw() + xlab("Year") + ylab("Count of Samples") + ggtitle("Count of Positive Legionella Samples by Serotype") + theme(aspect.ratio=1.5/1)
+
+```
+
+
+```{r leg prop 2, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+Legionella_prop3 <- as.data.frame(table(positiveleg$serotype,positiveleg$resyr))
+Legionella_prop3 <-reshape(Legionella_prop3, idvar= 'Var1', timevar='Var2', direction="wide")
+names(Legionella_prop3)[1]<-'Serotype'
+names(Legionella_prop3)[2]<-'2020'
+names(Legionella_prop3)[3]<-'2021'
+names(Legionella_prop3)[4]<-'2022'
+
+kbl(Legionella_prop3, booktabs = T) %>% kable_styling(full_width = F) %>%
+  kable_styling(font_size = 12)%>%
+  kable_styling(latex_options = "HOLD_position")
+
+```
+
+Frequencies across all 3 years:
+```{r leg prop 3, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+summary(freqlist(~ serotype, data = positiveleg))
+
+```
+
+\pagebreak
+
+# N meningitidis
+
+## Positivity
+
+```{r n men positives, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+Nmeningitidis <- Nmeningitidis %>%             
+  mutate(Indication = as.factor(Indication))
+Nmeningitidis <- Nmeningitidis %>%             
+  mutate(resyr = as.factor(resyr))
+Nmeningitidis$'Indication'[Nmeningitidis$`Dis Code Found` == 'GC was found'] <- 'Negative'
+
+Nmeningitidis2 <- Nmeningitidis[!duplicated(Nmeningitidis$`Lab No`),]
+Nmeningitidis2$Indication <- Nmeningitidis2$Indication
+Nmeningitidis2$resyr <- Nmeningitidis2$resyr
+
+Nmeningitidis_prop <- as.data.frame(table(Nmeningitidis2$Indication,Nmeningitidis2$resyr))
+names(Nmeningitidis_prop)[1]<-'Indication'
+names(Nmeningitidis_prop)[2]<-'Year'
+names(Nmeningitidis_prop)[3]<-'Count'
+
+Nmeningitidis_prop$Count <- as.numeric(Nmeningitidis_prop$Count)
+
+Nmeningitidis_pos <- as.data.frame(table(Nmeningitidis2$Indication,Nmeningitidis2$resyr))
+Nmeningitidis_pos <-reshape(Nmeningitidis_pos, idvar= 'Var1', timevar='Var2', direction="wide")
+names(Nmeningitidis_pos)[1]<-'Indication'
+names(Nmeningitidis_pos)[2]<-'2020'
+names(Nmeningitidis_pos)[3]<-'2021'
+names(Nmeningitidis_pos)[4]<-'2022'
+
+ggplot(Nmeningitidis_prop, aes(fill=Indication, y=Count, x=Year)) + 
+    geom_bar(position="stack", stat="identity", colour="black") + scale_y_continuous(breaks=seq(0, 22, 2)) +  theme_bw() + xlab("Year") + ylab("Count of Samples") + ggtitle("Count of N. meningitidis Samples by 'Indication'") + theme(aspect.ratio=1.5/1)
+
+
+```
+
+```{r n men positives 2, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+kbl(Nmeningitidis_pos, booktabs = T) %>% kable_styling(full_width = F) %>%
+  kable_styling(font_size = 12) %>%
+  kable_styling(latex_options = "HOLD_position")
+
+```
+
+
+## Serotypes
+
+```{r n men serotypes, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+positivenmen <- filter(Nmeningitidis2, Indication == "Positive")
+
+positivenmen$serotype <- ifelse(positivenmen$`Dis Code Found`=="Neisseria meningitidis serogroup B was found", "Serogroup B", 
+                                ifelse(positivenmen$`Dis Code Found`=="Neisseria meningitidis serogroup C was found", "Serogroup C",
+                                       ifelse(positivenmen$`Dis Code Found`=="Neisseria meningitidis serogroup W135 was found", "Serogroup W135", 
+                                              ifelse(positivenmen$`Dis Code Found`=="Neisseria meningitidis serogroup Y was found", "Serogroup Y", 
+                                                     ifelse(positivenmen$`Dis Code Found`=="Neisseria meningitidis serogroup X was found", "Serogroup X",
+                                                            ifelse(positivenmen$`Dis Code Found`=="Neisseria meningitidis serogroup A was found", "Serogroup A", 
+                                                                   ifelse(positivenmen$`Dis Code Found`=="Neisseria meningitidis serogroup Z’ was found", "Serogroup Z","No serogroup" )))))))
+
+Nmeningitidis_prop2 <- as.data.frame(table(positivenmen$serotype,positivenmen$resyr))
+
+names(Nmeningitidis_prop2)[1]<-'Serotype'
+names(Nmeningitidis_prop2)[2]<-'Year'
+names(Nmeningitidis_prop2)[3]<-'Count'
+
+
+ggplot(Nmeningitidis_prop2, aes(fill=Serotype, y=Count, x=Year)) + scale_fill_viridis(discrete=TRUE)+
+  geom_bar(position="stack", stat="identity", colour="black") + scale_y_continuous(breaks=seq(0, 22, 2)) +
+  theme_bw() + xlab("Year") + ylab("Count of Samples") + ggtitle("Count of Positive N. meningitidis Samples by Serotype") + theme(aspect.ratio=1.5/1)
+
+```
+
+```{r nmen prop 2, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+Nmeningitidis_prop3 <- as.data.frame(table(positivenmen$serotype,positivenmen$resyr))
+Nmeningitidis_prop3 <-reshape(Nmeningitidis_prop3, idvar= 'Var1', timevar='Var2', direction="wide")
+names(Nmeningitidis_prop3)[1]<-'Serotype'
+names(Nmeningitidis_prop3)[2]<-'2020'
+names(Nmeningitidis_prop3)[3]<-'2021'
+names(Nmeningitidis_prop3)[4]<-'2022'
+
+kbl(Nmeningitidis_prop3, booktabs = T) %>% kable_styling(full_width = F) %>%
+  kable_styling(font_size = 12)%>%
+  kable_styling(latex_options = "HOLD_position")
+
+```
+
+Frequencies across all 3 years:
+```{r nmen prop 3, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+summary(freqlist(~ serotype, data = positivenmen))
+
+```
+
+\pagebreak
+
+# Screening
+
+## Positivity
+
+```{r scr positives, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+Screening <- Screening %>%             
+  mutate(Indication = as.factor(Indication))
+Screening <- Screening %>%             
+  mutate(resyr = as.factor(resyr))
+
+Screening2 <- Screening[!duplicated(Screening$`Lab No`),]
+Screening2$Indication <- Screening2$Indication
+Screening2$resyr <- Screening2$resyr
+
+Screening_prop <- as.data.frame(table(Screening2$Indication,Screening2$resyr))
+names(Screening_prop)[1]<-'Indication'
+names(Screening_prop)[2]<-'Year'
+names(Screening_prop)[3]<-'Count'
+
+Screening_prop$Count <- as.numeric(Screening_prop$Count)
+
+Screening_pos <- as.data.frame(table(Screening2$Indication,Screening2$resyr))
+Screening_pos <-reshape(Screening_pos, idvar= 'Var1', timevar='Var2', direction="wide")
+names(Screening_pos)[1]<-'Indication'
+names(Screening_pos)[2]<-'2020'
+names(Screening_pos)[3]<-'2021'
+names(Screening_pos)[4]<-'2022'
+
+
+ggplot(Screening_prop, aes(fill=Indication, y=Count, x=Year)) + 
+    geom_bar(position="stack", stat="identity", colour="black") + scale_y_continuous(breaks=seq(0, 500, 20)) +  theme_bw() + xlab("Year") + ylab("Count of Samples") + ggtitle("Count of Screening Samples by 'Indication'") + theme(aspect.ratio=2/1)
+
+```
+
+```{r scr positives 2, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+kbl(Screening_pos, booktabs = T) %>% kable_styling(full_width = F) %>%
+  kable_styling(font_size = 12) %>%
+  kable_styling(latex_options = "HOLD_position")
+
+```
+
+\pagebreak
+
+## Serotypes
+
+A vast majority of samples (especially those from 2022) are labelled as "Enteric Pathogen Screening: See comment" - unfortunately, I don't have access to these comments. 
+
+```{r scr serotypes, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+positivescr <- filter(Screening2, Indication == "Positive")
+positivescr$serotype <- positivescr$`Dis Code Found`
+
+Screening_prop2 <- as.data.frame(table(positivescr$serotype,positivescr$resyr))
+
+names(Screening_prop2)[1]<-'Serotype'
+names(Screening_prop2)[2]<-'Year'
+names(Screening_prop2)[3]<-'Count'
+
+ggplot(Screening_prop2, aes(fill=Serotype, y=Count, x=Year)) + scale_fill_viridis(discrete=TRUE)+
+  geom_bar(position="stack", stat="identity", colour="black") + scale_y_continuous(breaks=seq(0, 500, 20)) +  theme_bw() + xlab("Year") + ylab("Count of Samples") + ggtitle("Count of Positive Screening Samples by Serotype")+ theme(aspect.ratio=2.5/1)
+
+```
+
+```{r scr prop 2, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+Screening_prop3 <- as.data.frame(table(positivescr$serotype,positivescr$resyr))
+Screening_prop3 <-reshape(Screening_prop3, idvar= 'Var1', timevar='Var2', direction="wide")
+names(Screening_prop3)[1]<-'Serotype'
+names(Screening_prop3)[2]<-'2020'
+names(Screening_prop3)[3]<-'2021'
+names(Screening_prop3)[4]<-'2022'
+
+kbl(Screening_prop3, booktabs = T) %>% kable_styling(full_width = F) %>%
+  kable_styling(font_size = 12) %>%
+  kable_styling(latex_options = "HOLD_position")
+```
+
+Frequencies across all 3 years:
+```{r scr prop 3, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+summary(freqlist(~ serotype, data = positivescr))
+
+```
+
+\pagebreak
+
+# Shigella
+
+## Positivity
+
+```{r shig positives, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+Shigella <- Shigella %>%             
+  mutate(Indication = as.factor(Indication))
+Shigella <- Shigella %>%             
+  mutate(resyr = as.factor(resyr))
+
+Shigella2 <- Shigella[!duplicated(Shigella$`Lab No`),]
+Shigella2$Indication <- Shigella2$Indication
+Shigella2$resyr <- Shigella2$resyr
+
+Shigella_prop <- as.data.frame(table(Shigella2$Indication,Shigella2$resyr))
+names(Shigella_prop)[1]<-'Indication'
+names(Shigella_prop)[2]<-'Year'
+names(Shigella_prop)[3]<-'Count'
+
+Shigella_prop$Count <- as.numeric(Shigella_prop$Count)
+
+Shigella_pos <- as.data.frame(table(Shigella2$Indication,Shigella2$resyr))
+Shigella_pos <-reshape(Shigella_pos, idvar= 'Var1', timevar='Var2', direction="wide")
+names(Shigella_pos)[1]<-'Indication'
+names(Shigella_pos)[2]<-'2020'
+names(Shigella_pos)[3]<-'2021'
+names(Shigella_pos)[4]<-'2022'
+
+
+ggplot(Shigella_prop, aes(fill=Indication, y=Count, x=Year)) + 
+    geom_bar(position="stack", stat="identity", colour="black") + scale_y_continuous(breaks=seq(0, 300, 20)) +  theme_bw() + xlab("Year") + ylab("Count of Samples") + ggtitle("Count of Shigella Samples by 'Indication'") + theme(aspect.ratio=2/1)
+
+```
+
+```{r shig positives 2, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+kbl(Shigella_pos, booktabs = T) %>% kable_styling(full_width = F) %>%
+  kable_styling(font_size = 12) %>%
+  kable_styling(latex_options = "HOLD_position")
+
+```
+
+\pagebreak
+
+## Serotypes
+
+```{r shig serotypes, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+positiveshig <- filter(Shigella2, Indication == "Positive")
+positiveshig$serotype <- positiveshig$`Dis Code Found`
+
+Shigella_prop2 <- as.data.frame(table(positiveshig$serotype,positiveshig$resyr))
+
+names(Shigella_prop2)[1]<-'Serotype'
+names(Shigella_prop2)[2]<-'Year'
+names(Shigella_prop2)[3]<-'Count'
+
+ggplot(Shigella_prop2, aes(fill=Serotype, y=Count, x=Year)) + scale_fill_viridis(discrete=TRUE)+
+  geom_bar(position="stack", stat="identity", colour="black") + scale_y_continuous(breaks=seq(0, 250, 20)) +
+  theme_bw() + xlab("Year") + ylab("Count of Samples") + ggtitle("Count of Positive Shigella Samples by Serotype")+ theme(aspect.ratio=2.5/1)
+
+```
+
+```{r shig prop 2, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+Shigella_prop3 <- as.data.frame(table(positiveshig$serotype,positiveshig$resyr))
+Shigella_prop3 <-reshape(Shigella_prop3, idvar= 'Var1', timevar='Var2', direction="wide")
+names(Shigella_prop3)[1]<-'Serotype'
+names(Shigella_prop3)[2]<-'2020'
+names(Shigella_prop3)[3]<-'2021'
+names(Shigella_prop3)[4]<-'2022'
+
+kbl(Shigella_prop3, booktabs = T) %>% kable_styling(full_width = F) %>%
+  kable_styling(font_size = 12) %>%
+  kable_styling(latex_options = "HOLD_position")
+```
+
+Frequencies across all 3 years:
+```{r shig prop 3, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+summary(freqlist(~ serotype, data = positiveshig))
+
+```
+
+\pagebreak
+
+
+# STEC
+
+## Positivity
+
+```{r STEC positives, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+STEC <- STEC %>%             
+  mutate(Indication = as.factor(Indication))
+STEC <- STEC %>%             
+  mutate(resyr = as.factor(resyr))
+
+STEC2 <- STEC[!duplicated(STEC$`Lab No`),]
+STEC2$Indication <- STEC2$Indication
+STEC2$resyr <- STEC2$resyr
+
+STEC_prop <- as.data.frame(table(STEC2$Indication,STEC2$resyr))
+names(STEC_prop)[1]<-'Indication'
+names(STEC_prop)[2]<-'Year'
+names(STEC_prop)[3]<-'Count'
+
+STEC_prop$Count <- as.numeric(STEC_prop$Count)
+
+STEC_pos <- as.data.frame(table(STEC2$Indication,STEC2$resyr))
+STEC_pos <-reshape(STEC_pos, idvar= 'Var1', timevar='Var2', direction="wide")
+names(STEC_pos)[1]<-'Indication'
+names(STEC_pos)[2]<-'2020'
+names(STEC_pos)[3]<-'2021'
+names(STEC_pos)[4]<-'2022'
+
+ggplot(STEC_prop, aes(fill=Indication, y=Count, x=Year)) + 
+    geom_bar(position="stack", stat="identity", colour="black") + scale_y_continuous(breaks=seq(0, 300, 20)) +  theme_bw() + xlab("Year") + ylab("Count of Samples") + ggtitle("Count of STEC Samples by 'Indication'") + theme(aspect.ratio=2/1)
+
+```
+
+```{r STEC positives 2, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+kbl(STEC_pos, booktabs = T) %>% kable_styling(full_width = F) %>%
+  kable_styling(font_size = 12) %>%
+  kable_styling(latex_options = "HOLD_position")
+
+```
+
+
+\pagebreak
+
+## Serotypes
+
+```{r stec serotypes, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+positivestec <- filter(STEC2, Indication == "Positive")
+positivestec$serotype <- positivestec$`Dis Code Found`
+positivestec$serotype[positivestec$`Dis Code Found` == 'E. coli O157 NOT H7'] <- 'E. coli O157 not H7'
+positivestec$serotype[positivestec$`Dis Code Found` == 'Shiga Pos. No organism isolated'] <- 'Shiga positive; no organism detected'
+
+STEC_prop2 <- as.data.frame(table(positivestec$serotype,positivestec$resyr))
+
+names(STEC_prop2)[1]<-'Serotype'
+names(STEC_prop2)[2]<-'Year'
+names(STEC_prop2)[3]<-'Count'
+
+
+ggplot(STEC_prop2, aes(fill=Serotype, y=Count, x=Year)) + scale_fill_viridis(discrete=TRUE)+
+  geom_bar(position="stack", stat="identity", colour="black") + scale_y_continuous(breaks=seq(0, 250, 20)) +
+  theme_bw() + xlab("Year") + ylab("Count of Samples") + ggtitle("Count of Positive STEC Samples by Serotype")+ theme(aspect.ratio=2/1)
+
+```
+
+
+```{r stec prop 2, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+STEC_prop3 <- as.data.frame(table(positivestec$serotype,positivestec$resyr))
+STEC_prop3 <-reshape(STEC_prop3, idvar= 'Var1', timevar='Var2', direction="wide")
+names(STEC_prop3)[1]<-'Serotype'
+names(STEC_prop3)[2]<-'2020'
+names(STEC_prop3)[3]<-'2021'
+names(STEC_prop3)[4]<-'2022'
+
+kbl(STEC_prop3, booktabs = T) %>% kable_styling(full_width = F) %>%
+  kable_styling(font_size = 12)%>%
+  kable_styling(latex_options = "HOLD_position")
+
+```
+Frequencies across all 3 years:
+```{r stec prop 3, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+summary(freqlist(~ serotype, data = positivestec))
+
+```
+
+\pagebreak
+
+# Vibrio
+
+## Positivity
+
+```{r Vibrio positives, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+Vibrio <- Vibrio %>%             
+  mutate(Indication = as.factor(Indication))
+Vibrio <- Vibrio %>%             
+  mutate(resyr = as.factor(resyr))
+
+Vibrio2 <- Vibrio[!duplicated(Vibrio$`Lab No`),]
+Vibrio2$Indication <- Vibrio2$Indication
+Vibrio2$resyr <- Vibrio2$resyr
+
+Vibrio_prop <- as.data.frame(table(Vibrio2$Indication,Vibrio2$resyr))
+names(Vibrio_prop)[1]<-'Indication'
+names(Vibrio_prop)[2]<-'Year'
+names(Vibrio_prop)[3]<-'Count'
+
+Vibrio_prop$Count <- as.numeric(Vibrio_prop$Count)
+
+Vibrio_pos <- as.data.frame(table(Vibrio2$Indication,Vibrio2$resyr))
+Vibrio_pos <-reshape(Vibrio_pos, idvar= 'Var1', timevar='Var2', direction="wide")
+names(Vibrio_pos)[1]<-'Indication'
+names(Vibrio_pos)[2]<-'2020'
+names(Vibrio_pos)[3]<-'2021'
+names(Vibrio_pos)[4]<-'2022'
+
+ggplot(Vibrio_prop, aes(fill=Indication, y=Count, x=Year)) + 
+    geom_bar(position="stack", stat="identity", colour="black") + scale_y_continuous(breaks=seq(0, 300, 20)) +  theme_bw() + xlab("Year") + ylab("Count of Samples") + ggtitle("Count of Vibrio Samples by 'Indication'") + theme(aspect.ratio=2/1)
+
+```
+
+```{r Vibrio positives 2, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+kbl(Vibrio_pos, booktabs = T) %>% kable_styling(full_width = F) %>%
+  kable_styling(font_size = 12)%>%
+  kable_styling(latex_options = "HOLD_position")
+
+```
+
+
+## Serotypes
+
+```{r Vibrio serotypes, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+positiveVibrio <- filter(Vibrio2, Indication == "Positive")
+positiveVibrio$serotype <- positiveVibrio$`Dis Code Found`
+
+Vibrio_prop2 <- as.data.frame(table(positiveVibrio$serotype,positiveVibrio$resyr))
+
+names(Vibrio_prop2)[1]<-'Serotype'
+names(Vibrio_prop2)[2]<-'Year'
+names(Vibrio_prop2)[3]<-'Count'
+
+
+ggplot(Vibrio_prop2, aes(fill=Serotype, y=Count, x=Year)) + scale_fill_viridis(discrete=TRUE)+
+  geom_bar(position="stack", stat="identity", colour="black") + scale_y_continuous(breaks=seq(0, 250, 20)) +
+  theme_bw() + xlab("Year") + ylab("Count of Samples") + ggtitle("Count of Positive Vibrio Samples by Serotype")+ theme(aspect.ratio=2/1)
+
+```
+
+```{r vibrio prop 2, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+Vibrio_prop3 <- as.data.frame(table(positiveVibrio$serotype,positiveVibrio$resyr))
+Vibrio_prop3 <-reshape(Vibrio_prop3, idvar= 'Var1', timevar='Var2', direction="wide")
+names(Vibrio_prop3)[1]<-'Serotype'
+names(Vibrio_prop3)[2]<-'2020'
+names(Vibrio_prop3)[3]<-'2021'
+names(Vibrio_prop3)[4]<-'2022'
+
+kbl(Vibrio_prop3, booktabs = T) %>% kable_styling(full_width = F) %>%
+  kable_styling(font_size = 12) %>%
+  kable_styling(latex_options = "HOLD_position")
+
+```
+
+Frequencies across all 3 years:
+```{r vibrio prop 3, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+summary(freqlist(~ serotype, data = positiveVibrio))
+
+```
+
+\pagebreak
+
+# Yersinia
+
+## Positivity
+
+```{r Yersinia positives, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+Yersinia <- Yersinia %>%             
+  mutate(Indication = as.factor(Indication))
+Yersinia <- Yersinia %>%             
+  mutate(resyr = as.factor(resyr))
+
+Yersinia2 <- Yersinia[!duplicated(Yersinia$`Lab No`),]
+Yersinia2$Indication <- Yersinia2$Indication
+Yersinia2$resyr <- Yersinia2$resyr
+
+Yersinia_prop <- as.data.frame(table(Yersinia2$Indication,Yersinia2$resyr))
+names(Yersinia_prop)[1]<-'Indication'
+names(Yersinia_prop)[2]<-'Year'
+names(Yersinia_prop)[3]<-'Count'
+
+Yersinia_prop$Count <- as.numeric(Yersinia_prop$Count)
+
+Yersinia_pos <- as.data.frame(table(Yersinia2$Indication,Yersinia2$resyr))
+Yersinia_pos <-reshape(Yersinia_pos, idvar= 'Var1', timevar='Var2', direction="wide")
+names(Yersinia_pos)[1]<-'Indication'
+names(Yersinia_pos)[2]<-'2020'
+names(Yersinia_pos)[3]<-'2021'
+names(Yersinia_pos)[4]<-'2022'
+
+ggplot(Yersinia_prop, aes(fill=Indication, y=Count, x=Year)) + 
+    geom_bar(position="stack", stat="identity", colour="black") + scale_y_continuous(breaks=seq(0, 300, 10)) +  theme_bw() + xlab("Year") + ylab("Count of Samples") + ggtitle("Count of Yersinia Samples by 'Indication'") + theme(aspect.ratio=2/1)
+
+```
+
+```{r Yersinia positives 2, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+kbl(Yersinia_pos, booktabs = T) %>% kable_styling(full_width = F) %>%
+  kable_styling(font_size = 12) %>%
+  kable_styling(latex_options = "HOLD_position")
+
+```
+
+\pagebreak
+
+## Serotypes
+```{r Yersinia serotypes, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+positiveYersinia <- filter(Yersinia2, Indication == "Positive")
+positiveYersinia$serotype <- positiveYersinia$`Dis Code Found`
+
+Yersinia_prop2 <- as.data.frame(table(positiveYersinia$serotype,positiveYersinia$resyr))
+
+names(Yersinia_prop2)[1]<-'Serotype'
+names(Yersinia_prop2)[2]<-'Year'
+names(Yersinia_prop2)[3]<-'Count'
+
+
+ggplot(Yersinia_prop2, aes(fill=Serotype, y=Count, x=Year)) + scale_fill_viridis(discrete=TRUE)+
+  geom_bar(position="stack", stat="identity", colour="black") + scale_y_continuous(breaks=seq(0, 250, 10)) +
+  theme_bw() + xlab("Year") + ylab("Count of Samples") + ggtitle("Count of Positive Yersinia Samples by Serotype")+ theme(aspect.ratio=2/1)
+
+```
+
+```{r yersinia prop 2, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+Yersinia_prop3 <- as.data.frame(table(positiveYersinia$serotype,positiveYersinia$resyr))
+Yersinia_prop3 <-reshape(Yersinia_prop3, idvar= 'Var1', timevar='Var2', direction="wide")
+names(Yersinia_prop3)[1]<-'Serotype'
+names(Yersinia_prop3)[2]<-'2020'
+names(Yersinia_prop3)[3]<-'2021'
+names(Yersinia_prop3)[4]<-'2022'
+
+kbl(Yersinia_prop3, booktabs = T) %>% kable_styling(full_width = F) %>%
+  kable_styling(font_size = 12) %>%
+  kable_styling(latex_options = "HOLD_position")
+
+```
+
+Frequencies across all 3 years:
+```{r yersinia prop 3, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+summary(freqlist(~ serotype, data = positiveYersinia))
+
+```

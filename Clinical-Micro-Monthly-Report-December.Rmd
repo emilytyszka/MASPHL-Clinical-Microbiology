@@ -1,0 +1,385 @@
+---
+title: "Clinical Micro Monthly Report December"
+date: "`r Sys.Date()`"
+author: Emily Tyszka
+output:
+  pdf_document: default
+  classoption: landscape
+header-includes:
+- \usepackage{titling}
+- \usepackage{wrapfig}
+- \usepackage{lipsum}
+- \pretitle{\begin{center} \includegraphics[width=2in,height=2in]{1200px-MassDPH_svg.png}\LARGE\\}
+- \posttitle{\end{center}}
+- \newcommand{\blandscape}{\begin{landscape}}
+- \newcommand{\elandscape}{\end{landscape}}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#Load in Libraries
+library(readxl)
+library(plyr)
+library(dplyr)
+library(tidyverse)
+library(writexl)
+library(openxlsx)
+library(lubridate) 
+library(data.table)
+library(kableExtra)
+library(knitr)
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_knit$set(root.dir= normalizePath('..'))
+knitr::opts_chunk$set(error = FALSE)
+library(tidyr)
+library(janitor)
+library(scales)
+library(kableExtra)
+library(tinytex)
+library(yaml)
+library(ggpubr)
+library(cowplot)
+library(formattable)
+library(treemap)
+
+```
+
+```{r, include = F}
+defOut <- knitr::knit_hooks$get("plot")  # save the default plot hook 
+knitr::knit_hooks$set(plot = function(x, options) {  # set new plot hook ...
+  x <- defOut(x, options)  # first apply the default hook
+  if(!is.null(options$wrapfigure)) {  # then, if option wrapfigure is given ...
+    # create the new opening string for the wrapfigure environment ...
+    wf <- sprintf("\\begin{wrapfigure}{%s}{%g\\textwidth}", options$wrapfigure[[1]], options$wrapfigure[[2]])
+    x  <- gsub("\\begin{figure}", wf, x, fixed = T)  # and replace the default one with it.
+    x  <- gsub("{figure}", "{wrapfigure}", x, fixed = T)  # also replace the environment ending
+  }
+  return(x)
+})
+```
+
+
+```{r read in data big chart, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+master_disease_found2022<-read_excel(here::here("J:/Clinical Microbiology/Monthly Numbers/2022/12 December/Data","Master_Disease_Found.xlsx"))  #2022 only
+
+```
+
+```{r year clean data big chart, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+master_disease_found2022$recyr <-
+  data.table::year(as.POSIXlt(master_disease_found2022$"Dt Recvd", format="%m-%d-%Y")) #year received
+master_disease_found2022$recmon <-
+  month(as.POSIXlt(master_disease_found2022$"Dt Recvd", format="%m-%d-%Y")) #month received
+master_disease_found2022$relyr <-
+  data.table::year(as.POSIXlt(master_disease_found2022$"Releasedate" , format="%m-%d-%Y")) #year released
+master_disease_found2022$relmon <-
+  month(as.POSIXlt(master_disease_found2022$"Releasedate" , format="%m-%d-%Y")) #month released
+
+
+```
+
+
+```{r names clean data big chart, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+master_disease_found2022$FLNAME <- paste(master_disease_found2022$Lname,
+                                   master_disease_found2022$Fname,
+                                   master_disease_found2022$`Lab No`) # NOTE - issue with JP data!
+
+```
+
+\blandscape
+
+
+```{r sort and count data big chart, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+#First Sort the Data
+master_disease_found2022<- 
+  master_disease_found2022[order(master_disease_found2022$FLNAME, #sort by full name
+                             rev(master_disease_found2022$Indication)),]
+
+
+#Next take out only the first observation
+master_disease_found2022_first <- data.table(master_disease_found2022, key=c('FLNAME'))
+
+
+#Count the unique Specimens 
+master_disease_found_unique<-master_disease_found2022_first[J(unique(master_disease_found2022_first$FLNAME)), mult = "first"]
+master_disease_found_unique$people<-1
+
+
+#Remove Diseases we shouldn't look at - Bacillis anthracis, Brucellas, Burkhulderia, Botulism, Tularemia - and State Lab Results
+master_disease_found_unique<- master_disease_found_unique[(master_disease_found_unique$`Dis Code Ordered` != 'Bacillus anthracis' & 
+                                                             master_disease_found_unique$`Dis Code Ordered` != 'Brucella Serology' &
+                                                             master_disease_found_unique$`Dis Code Ordered` != 'Brucella species' & 
+                                                             master_disease_found_unique$`Dis Code Ordered` != 'Bur0kholderia sp.' &
+                                                             master_disease_found_unique$`Dis Code Ordered` != 'Clostridium botulinum' & 
+                                                             master_disease_found_unique$`Dis Code Ordered` != 'Francisella tularensis' & 
+                                                             master_disease_found_unique$`Dis Code Ordered` != 'Tularemia Serology' & 
+                                                             master_disease_found_unique$Submitter != 'STATE LABORATORY INSTITUTE'),] # gets rid of those odd named results
+
+
+#Find the Maximum and Minimum Year of Receipt (this will always be the most recent month we pulled) 
+master_disease_found_unique$Year_Max<-max(master_disease_found_unique$recyr, na.rm = TRUE)
+master_disease_found_unique$Year_Min<-min(master_disease_found_unique$recyr, na.rm = TRUE)
+
+
+#If year = maximum year, then we use it for our yearly analyses. 
+master_disease_found_unique_thisyr<-master_disease_found_unique[(master_disease_found_unique$recyr == master_disease_found_unique$Year_Max),]
+
+
+#Table of Counts: Disease, Month, Count of Specimens
+spec_by_mon<-as.data.frame(table(master_disease_found_unique_thisyr$`Dis Code Ordered`,master_disease_found_unique_thisyr$recmon))
+
+#Name the columns in Analytic Set
+names(spec_by_mon)[1]<-'Disease'
+names(spec_by_mon)[2]<-'Month'
+names(spec_by_mon)[3]<-'Specimen Count'
+```
+
+\pagebreak
+
+
+```{r montab, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+#Add Positive Counts
+#Tabulate Positive Specimens by Receive Month
+master_disease_found_uniquep<-
+  master_disease_found_unique_thisyr[(master_disease_found_unique_thisyr$Indication == 'Positive'),]
+
+#Tabulate Campylobacter because the numbers are very high#
+master_disease_found_camp<-
+  master_disease_found_uniquep[(master_disease_found_uniquep$`Dis Code Ordered` == 'Campylobacter'),]
+
+
+#Merge Positive Counts with Annual Volumes
+pos_spec_by_mon <-as.data.frame(table(master_disease_found_uniquep$`Dis Code Ordered`,master_disease_found_uniquep$recmon))
+names(pos_spec_by_mon)[1]<-'Disease'
+names(pos_spec_by_mon)[2]<-'Month'
+names(pos_spec_by_mon)[3]<-'Positive Specimen Count'
+spec_by_mon_all<-merge(spec_by_mon, pos_spec_by_mon, by.x = c('Disease','Month'), by.y = c('Disease','Month'), all.x = TRUE)
+
+#If no positive specs is na then make it 0
+spec_by_mon_all$`Positive Specimen Count`[is.na(spec_by_mon_all$`Positive Specimen Count`)] <- 0
+#colnames(spec_by_mon_all)
+
+#Remove this month's stuff
+#spec_by_mon_all<- spec_by_mon_all %>% filter(Month != "1")
+
+
+#Finally Make a Nicely Formatted Summary Table#
+spec_by_mon_all_wide<-reshape(spec_by_mon_all, idvar= 'Disease', timevar='Month', direction="wide")
+#Add Row and Column Totals
+spec_by_mon_all_wide_1<-spec_by_mon_all_wide %>% adorn_totals(c("row")) 
+
+#Rename the data set so that we dont need to edit the previous code
+spec_by_mon_all_wide<-spec_by_mon_all_wide_1
+
+#Sum Columns by Column index 
+spec_by_mon_all_wide_1a<-data.frame(spec_by_mon_all_wide,  'Overall Total'=rowSums(spec_by_mon_all_wide[c(2,4,6,8,10,12,14,16,18,20,22,24)]), 'Positive Total'=rowSums(spec_by_mon_all_wide[c(3,5,7,9,11,13,15,17,19,21,23,25)]))
+
+#Rename all the columns 
+names(spec_by_mon_all_wide_1a)[3]<-"Positive"
+names(spec_by_mon_all_wide_1a)[5]<-"Positive"
+names(spec_by_mon_all_wide_1a)[7]<-"Positive"
+names(spec_by_mon_all_wide_1a)[9]<-"Positive"
+names(spec_by_mon_all_wide_1a)[11]<-"Positive"
+names(spec_by_mon_all_wide_1a)[13]<-"Positive"
+names(spec_by_mon_all_wide_1a)[15]<-"Positive"
+names(spec_by_mon_all_wide_1a)[17]<-"Positive"
+names(spec_by_mon_all_wide_1a)[19]<-"Positive"
+names(spec_by_mon_all_wide_1a)[21]<-"Positive"
+names(spec_by_mon_all_wide_1a)[23]<-"Positive"
+names(spec_by_mon_all_wide_1a)[25]<-"Positive"
+names(spec_by_mon_all_wide_1a)[27]<-"Positive Total"
+
+names(spec_by_mon_all_wide_1a)[2]<-"Total"
+names(spec_by_mon_all_wide_1a)[4]<-"Total"
+names(spec_by_mon_all_wide_1a)[6]<-"Total"
+names(spec_by_mon_all_wide_1a)[8]<-"Total"
+names(spec_by_mon_all_wide_1a)[10]<-"Total"
+names(spec_by_mon_all_wide_1a)[12]<-"Total"
+names(spec_by_mon_all_wide_1a)[14]<-"Total"
+names(spec_by_mon_all_wide_1a)[16]<-"Total"
+names(spec_by_mon_all_wide_1a)[18]<-"Total"
+names(spec_by_mon_all_wide_1a)[20]<-"Total"
+names(spec_by_mon_all_wide_1a)[22]<-"Total"
+names(spec_by_mon_all_wide_1a)[24]<-"TotaL"
+names(spec_by_mon_all_wide_1a)[26]<-"Annual Total"
+
+#Delete the row numbers
+row.names(spec_by_mon_all_wide_1a) <- NULL
+view(spec_by_mon_all_wide_1a)
+#That took forever to find that solution
+#Format the table 
+knitr::kable(spec_by_mon_all_wide_1a, caption = "Total Specimen Count and Positive Specimen Count by Disease") %>%
+  add_header_above(c(" "= 1, "January" = 2, "February" = 2, "March" = 2, "April" = 2, "May"=2, "June"=2, "July"=2, "August"=2, "September"=2, "October"=2, "November"=2, "December"=2, "Totals" = 2))%>% 
+  kable_styling(latex_options="scale_down")%>%
+  row_spec(0, angle = 45)%>%
+  kable_styling()
+
+```
+
+\pagebreak
+
+
+```{r traflt 1, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+# [fresh data table] + cleaning
+all<-read_excel(here::here("J:/Clinical Microbiology/Monthly Numbers/2022/12 December/Data","Master_Disease_Found_Old.xlsx")) #back to 1/2021
+
+all$recyr <- data.table::year(as.POSIXlt(all$"Dt Recvd", format="%m-%d-%Y")) #year received
+all$recmon <-
+  month(as.POSIXlt(all$"Dt Recvd", format="%m-%d-%Y")) #month received
+all$relyr <-
+  data.table::year(as.POSIXlt(all$"Releasedate", format="%m-%d-%Y")) #year released
+all$relmon <-
+  month(as.POSIXlt(all$"Releasedate", format="%m-%d-%Y")) #month released
+
+all$FLNAME <- paste(all$Lname, all$Fname, all$`Lab No`)
+
+#First Sort the Data
+all<- all[order(all$FLNAME, #sort by full name
+                             rev(all$Indication)),]
+
+
+#Next take out only the first observation
+all_first <- data.table(all, key=c('FLNAME'))
+
+
+#Count the unique Specimens 
+unique<-all_first[J(unique(all_first$FLNAME)), mult = "first"]
+unique$people<-1
+
+#Remove Diseases we shouldn't look at - Bacillis anthracis, Brucellas, Burkhulderia, Botulism, Tularemia - and State Lab Results
+unique<- unique[(unique$`Dis Code Ordered` != 'Bacillus anthracis' & unique$`Dis Code Ordered` != 'Brucella Serology' &
+                   unique$`Dis Code Ordered` != 'Brucella species' & unique$`Dis Code Ordered` != 'Burkholderia sp.' &
+                   unique$`Dis Code Ordered` != 'Clostridium botulinum' & unique$`Dis Code Ordered` != 'Francisella tularensis' & 
+                   unique$`Dis Code Ordered` != 'Tularemia Serology' & unique$Submitter != 'STATE LABORATORY INSTITUTE'),] # gets rid of those odd named results
+
+past2 <- dplyr::filter(unique, recyr>=2020)
+
+
+# Redoing her work 
+# max variables
+past2$Year_Max <- max(past2$recyr, na.rm = TRUE)
+
+# timeframes
+thismonthlastyear<-
+  past2[(past2$recmon == 12 & past2$recyr == (Year_Max-1)),] #this month; last year
+
+lastmonththisyear <-
+  past2[(past2$recmon == 11 & past2$recyr == (2022)),] #last month; this year
+
+thismonththisyear<-
+  past2[(past2$recmon == 12 & past2$recyr == (Year_Max)),]  # this month; this year
+
+
+
+#Limit each frame to needed variables 
+mon_20<-thismonthlastyear[,c("Indication","Dis Code Ordered", "recyr","recmon")] # this month and last year
+mon_lag<-lastmonththisyear[,c("Indication","Dis Code Ordered", "recyr","recmon")] #last month and this year
+mon_cur<-thismonththisyear[,c("Indication","Dis Code Ordered", "recyr","recmon")] # this month this year
+
+
+#Stack together
+cmpr<-rbind.fill(mon_20,mon_lag,mon_cur)
+cmpr$monyr<-paste0(cmpr$recyr,cmpr$recmon)
+
+#Make the Table and See How it Looks!! 
+cmpr_tbl<-as.data.frame(table(cmpr$`Dis Code Ordered`,cmpr$monyr))
+
+#Widen the Table
+cmpr_tbl_w<-reshape(cmpr_tbl, idvar= 'Var1', timevar='Var2', direction="wide")
+
+#Rename Columns
+names(cmpr_tbl_w)[1]<-"Disease"
+names(cmpr_tbl_w)[2]<-"Previous Year"
+names(cmpr_tbl_w)[3]<-"Previous Month"
+names(cmpr_tbl_w)[4]<-"Current Month"
+
+#Find Differences
+cmpr_tbl_w$yrdif<-((cmpr_tbl_w$`Current Month`)-(cmpr_tbl_w$`Previous Year`))
+cmpr_tbl_w$mndif<-((cmpr_tbl_w$`Current Month`)-(cmpr_tbl_w$`Previous Month`))
+
+#Pct Dif
+cmpr_tbl_w$yrdpc<-label_percent(accuracy = 1,
+                                decimal.mark = ".",)(round((((cmpr_tbl_w$`Current Month`)-(cmpr_tbl_w$`Previous Year`))/((cmpr_tbl_w$`Previous Year`))),2))
+cmpr_tbl_w$mndpc<-label_percent(accuracy = 1,
+                                decimal.mark = ".",)(round((((cmpr_tbl_w$`Current Month`)-(cmpr_tbl_w$`Previous Month`))/((cmpr_tbl_w$`Previous Month`))),2))
+
+
+#Rename Current Columns
+names(cmpr_tbl_w)[5]<-"Previous Year Dif"
+names(cmpr_tbl_w)[6]<-"Previous Month Dif"
+names(cmpr_tbl_w)[7]<-"Previous Year Pct Dif"
+names(cmpr_tbl_w)[8]<-"Previous Month Pct Dif"
+
+improvement_formatter <- formatter("span", 
+                                   style = x ~ style(font.weight = "bold", 
+                                                     color = ifelse(x > 0, "green", ifelse(x < 0, "red", "black"))), 
+                                   x ~ icontext(ifelse(x>0, "arrow-up", "arrow-down"), x))
+
+#Create Amazing Table 
+cmpr_tbl_w %>% plyr::mutate(
+    Disease = Disease,
+    'December 2021' = `Previous Year`,
+    'November 2022'= `Previous Month`,
+    'December 2022' = `Current Month`,
+    'December 2021 & December 2022 Difference' = improvement_formatter(`Previous Year Dif`), 
+    'November 2022 & December 2022 Difference' = improvement_formatter(`Previous Month Dif`), 
+    'December 2021 & December 2022 Percent Difference' = improvement_formatter(`Previous Year Pct Dif`), 
+    'November 2022 & December 2022 Percent Difference' = improvement_formatter(`Previous Month Pct Dif`)
+  )%>%
+  select(Disease,'December 2021','November 2022', 'December 2022', 'December 2021 & December 2022 Difference','November 2022 & December 2022 Difference', 'December 2021 & December 2022 Percent Difference', 'November 2022 & December 2022 Percent Difference')%>%
+    kable("html", escape = F, align = "c", caption = "December Specimen Counts Compared to Previous Month and December of Previous Year") %>%
+    kable_styling("bordered", position = "center",full_width = F) %>%
+    column_spec(1:6, width = "5cm")%>%
+    readr::write_file("J:/Clinical Microbiology/Monthly Numbers/2022/12 December/Final Reports/TrafficDecember.html")
+  #TRY EXPORTING
+    webshot::webshot("J:/Clinical Microbiology/Monthly Numbers/2022/12 December/Final Reports/TrafficDecember.html")
+    
+
+    
+```
+\pagebreak
+
+```{r TAT, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+master_disease_found_unique_thisyr$recvdate <- as.POSIXct(master_disease_found_unique_thisyr$"Dt Recvd", format="%m-%d-%Y", tz = "UTC")
+master_disease_found_unique_thisyr$releasedate <- as.POSIXct(master_disease_found_unique_thisyr$"Releasedate", format="%m-%d-%Y", tz = "UTC")
+master_disease_found_unique_thisyr$TAT <- as.numeric(difftime(master_disease_found_unique_thisyr$releasedate, master_disease_found_unique_thisyr$recvdate, units = "days"))
+master_disease_found_unique_thisyr$TAT <- as.numeric(master_disease_found_unique_thisyr$TAT)
+
+TAT <- master_disease_found_unique_thisyr %>%
+  dplyr::group_by(`Dis Code Ordered`) %>% dplyr::summarise(MeanTAT = mean(TAT))
+
+names(TAT)[1]<-"DisCode"
+TAT2<- subset(TAT, DisCode!= 'Screening')
+view(TAT2)
+TAT2$DisCode <- recode_factor(TAT2$DisCode, `N. meningitidis` = "N. mening.")
+TAT2$DisCode <- recode_factor(TAT2$DisCode, `Gonorrhea Culture` = "N. gon. culture")
+TAT2$DisCode <- recode_factor(TAT2$DisCode, `Campylobacter` = "Campy.")
+TAT2$DisCode <- recode_factor(TAT2$DisCode, `Gonorrhea Swab` = "Gon. Swab")
+TAT2$Label<-paste(TAT2$DisCode,round(TAT2$MeanTAT, digits = 1), "Days" )
+view(TAT2)
+treemap(TAT2,
+        index='Label',
+        vSize="MeanTAT",
+        vColor ="MeanTAT",
+        type="value",
+        palette="Spectral",
+        title="Mean Turnaround Time This Year by Specimen",
+        legend = TRUE,
+        algorithm = "pivotSize",
+        sortID = "size", 
+        title.legend = "Mean Number of Turnaround Days",
+        fontfamily.title = 'serif',
+        fontfamily.labels = 'serif', 
+        fontfamily.legend = 'serif',
+        fontsize.labels = 10, 
+        aspRatio = 2)
+
+```
+
+\elandscape
