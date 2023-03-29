@@ -57,7 +57,7 @@ library(arsenal)
 options(kableExtra.auto_format = FALSE)
 
 #Read in All Sheet Names
-tb2022<-("J:/TB/Monthly Numbers/2022/12 December/Data/TB Master Report.xlsx") #TB Master Report - everything since 2020
+tb2022<-("[FILE LOCATION]") #TB Master Report - everything since 2020
 #Read in excel
 tbmonth2022<-read_excel(tb2022, skip = 1)
 view(tbmonth2022)
@@ -193,7 +193,7 @@ if(nrow(discordantsjan3) > 0){
 ```{r jan old or new?, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
 
 #pull in our log of everyone's first appearance
-firsttbpositives<-("J:/TB/Monthly Numbers/Ever Positive/All Positive EVER.xlsx") 
+firsttbpositives<-(""[FILE LOCATION]"") 
 firsttbpositives<-read_excel(firsttbpositives)
 
 # check this month's results against the log
@@ -243,7 +243,7 @@ names(janpriors2)[names(janpriors2) == 'COLLDATE.x'] <- "COLLDATE"
 jannewfirstpositive <- janpriors2 %>% select(c('FNAME','LNAME', 'DOB', 'COLLDATE', 'ID'))
 firsttbpositives <- bind_rows(firsttbpositives, jannewfirstpositive)
 write_xlsx(firsttbpositives,
-           path = "J:/TB/Monthly Numbers/Ever Positive/All Positive EVER Jan 2022.xlsx")
+           path = ""[FILE LOCATION]"")
 
 ```
 
@@ -379,7 +379,7 @@ if(nrow(discordantsfebr3) > 0){
 ```{r febr old or new?, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
 
 #pull in our log of everyone's first appearance
-firsttbpositivesjan<-("J:/TB/Monthly Numbers/Ever Positive/All Positive EVER Jan 2022.xlsx") 
+firsttbpositivesjan<-("[FILE LOCATION]") 
 firsttbpositivesjan<-read_excel(firsttbpositivesjan)
 
 # check this month's results against the log
@@ -427,7 +427,7 @@ names(febrpriors2)[names(febrpriors2) == 'COLLDATE.x'] <- "COLLDATE"
 febrnewfirstpositive <- febrpriors2 %>% select(c('FNAME','LNAME', 'DOB', 'COLLDATE', 'ID'))
 firsttbpositives <- bind_rows(jannewfirstpositive, febrnewfirstpositive)
 write_xlsx(firsttbpositives,
-           path = "J:/TB/Monthly Numbers/Ever Positive/All Positive EVER Febr 2022.xlsx")
+           path = "[FILE LOCATION]")
 
 ```
 
@@ -560,7 +560,7 @@ if(nrow(discordantsmarch3) > 0){
 ```{r march old or new?, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
 
 #pull in our log of everyone's first appearance
-firsttbpositivesfebr<-("J:/TB/Monthly Numbers/Ever Positive/All Positive EVER febr 2022.xlsx") 
+firsttbpositivesfebr<-("[FILE LOCATION]") 
 firsttbpositivesfebr<-read_excel(firsttbpositivesfebr)
 
 # check this month's results against the log
@@ -610,7 +610,7 @@ names(marchpriors2)[names(marchpriors2) == 'COLLDATE.x'] <- "COLLDATE"
 marchnewfirstpositive <- marchpriors2 %>% select(c('FNAME','LNAME', 'DOB', 'COLLDATE', 'ID'))
 firsttbpositivesmarch <- bind_rows(firsttbpositivesfebr, marchnewfirstpositive)
 write_xlsx(firsttbpositivesmarch,
-           path = "J:/TB/Monthly Numbers/Ever Positive/All Positive EVER march 2022.xlsx")
+           path = "[FILE LOCATION]")
 
 ```
 
@@ -742,7 +742,7 @@ if(nrow(discordantsApril3) > 0){
 ```{r April old or new?, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
 
 #pull in our log of everyone's first appearance
-firsttbpositivesmar<-("J:/TB/Monthly Numbers/Ever Positive/All Positive EVER march 2022.xlsx") 
+firsttbpositivesmar<-("[FILE LOCATION]") 
 firsttbpositivesmar<-read_excel(firsttbpositivesmar)
 
 # check this month's results against the log
@@ -792,7 +792,7 @@ names(Aprilpriors2)[names(Aprilpriors2) == 'COLLDATE.x'] <- "COLLDATE"
 Aprilnewfirstpositive <- Aprilpriors2 %>% select(c('FNAME','LNAME', 'DOB', 'COLLDATE', 'ID'))
 firsttbpositivesApril <- bind_rows(firsttbpositivesmar, Aprilnewfirstpositive)
 write_xlsx(firsttbpositivesApril,
-           path = "J:/TB/Monthly Numbers/Ever Positive/All Positive EVER April 2022.xlsx")
+           path = "[FILE LOCATION]")
 
 ```
 
@@ -924,7 +924,7 @@ if(nrow(discordantsMay3) > 0){
 ```{r May old or new?, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
 
 #pull in our log of everyone's first appearance
-firsttbpositivesapr<-("J:/TB/Monthly Numbers/Ever Positive/All Positive EVER April 2022.xlsx") 
+firsttbpositivesapr<-("[FILE LOCATION]") 
 firsttbpositivesapr<-read_excel(firsttbpositivesapr)
 
 # check this month's results against the log
@@ -974,7 +974,7 @@ names(Maypriors2)[names(Maypriors2) == 'COLLDATE.x'] <- "COLLDATE"
 Maynewfirstpositive <- Maypriors2 %>% select(c('FNAME','LNAME', 'DOB', 'COLLDATE', 'ID'))
 firsttbpositivesMay <- bind_rows(firsttbpositivesapr, Maynewfirstpositive)
 write_xlsx(firsttbpositivesMay,
-           path = "J:/TB/Monthly Numbers/Ever Positive/All Positive EVER May 2022.xlsx")
+           path = "[FILE LOCATION]")
 
 ```
 
@@ -1106,7 +1106,7 @@ if(nrow(discordantsJune3) > 0){
 ```{r June old or new?, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
 
 #pull in our log of everyone's first appearance
-firsttbpositivesmay<-("J:/TB/Monthly Numbers/Ever Positive/All Positive EVER May 2022.xlsx") 
+firsttbpositivesmay<-("[FILE LOCATION]") 
 firsttbpositivesmay<-read_excel(firsttbpositivesmay)
 
 # check this month's results against the log
@@ -1156,7 +1156,7 @@ names(Junepriors2)[names(Junepriors2) == 'COLLDATE.x'] <- "COLLDATE"
 Junenewfirstpositive <- Junepriors2 %>% select(c('FNAME','LNAME', 'DOB', 'COLLDATE', 'ID'))
 firsttbpositivesJune <- bind_rows(firsttbpositivesmay, Junenewfirstpositive)
 write_xlsx(firsttbpositivesJune,
-           path = "J:/TB/Monthly Numbers/Ever Positive/All Positive EVER June 2022.xlsx")
+           path = "[FILE LOCATION]")
 
 ```
 
@@ -1288,7 +1288,7 @@ if(nrow(discordantsJuly3) > 0){
 ```{r July old or new?, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
 
 #pull in our log of everyone's first appearance
-firsttbpositivesmay<-("J:/TB/Monthly Numbers/Ever Positive/All Positive EVER June 2022.xlsx") 
+firsttbpositivesmay<-("[FILE LOCATION]") 
 firsttbpositivesmay<-read_excel(firsttbpositivesmay)
 
 # check this month's results against the log
@@ -1338,7 +1338,7 @@ names(Julypriors2)[names(Julypriors2) == 'COLLDATE.x'] <- "COLLDATE"
 Julynewfirstpositive <- Julypriors2 %>% select(c('FNAME','LNAME', 'DOB', 'COLLDATE', 'ID'))
 firsttbpositivesJuly <- bind_rows(firsttbpositivesmay, Julynewfirstpositive)
 write_xlsx(firsttbpositivesJuly,
-           path = "J:/TB/Monthly Numbers/Ever Positive/All Positive EVER July 2022.xlsx")
+           path = "[FILE LOCATION]")
 
 ```
 
@@ -1481,7 +1481,7 @@ if(nrow(discordantsAugust3) > 0){
 ```{r August old or new?, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
 
 #pull in our log of everyone's first appearance
-firsttbpositivesmay<-("J:/TB/Monthly Numbers/Ever Positive/All Positive EVER July 2022.xlsx") 
+firsttbpositivesmay<-("[FILE LOCATION]") 
 firsttbpositivesmay<-read_excel(firsttbpositivesmay)
 
 # check this month's results against the log
@@ -1531,7 +1531,7 @@ names(Augustpriors2)[names(Augustpriors2) == 'COLLDATE.x'] <- "COLLDATE"
 Augustnewfirstpositive <- Augustpriors2 %>% select(c('FNAME','LNAME', 'DOB', 'COLLDATE', 'ID'))
 firsttbpositivesAugust <- bind_rows(firsttbpositivesmay, Augustnewfirstpositive)
 write_xlsx(firsttbpositivesAugust,
-           path = "J:/TB/Monthly Numbers/Ever Positive/All Positive EVER August 2022.xlsx")
+           path = "[FILE LOCATION]")
 
 ```
 
@@ -1674,7 +1674,7 @@ if(nrow(discordantsSeptember3) > 0){
 ```{r September old or new?, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
 
 #pull in our log of everyone's first appearance
-firsttbpositivesmay<-("J:/TB/Monthly Numbers/Ever Positive/All Positive EVER August 2022.xlsx") 
+firsttbpositivesmay<-("[FILE LOCATION]") 
 firsttbpositivesmay<-read_excel(firsttbpositivesmay)
 
 # check this month's results against the log
@@ -1724,7 +1724,7 @@ names(Septemberpriors2)[names(Septemberpriors2) == 'COLLDATE.x'] <- "COLLDATE"
 Septembernewfirstpositive <- Septemberpriors2 %>% select(c('FNAME','LNAME', 'DOB', 'COLLDATE', 'ID'))
 firsttbpositivesSeptember <- bind_rows(firsttbpositivesmay, Septembernewfirstpositive)
 write_xlsx(firsttbpositivesSeptember,
-           path = "J:/TB/Monthly Numbers/Ever Positive/All Positive EVER September 2022.xlsx")
+           path = "[FILE LOCATION]")
 
 ```
 
@@ -1867,7 +1867,7 @@ if(nrow(discordantsOctober3) > 0){
 ```{r October old or new?, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
 
 #pull in our log of everyone's first appearance
-firsttbpositivesmay<-("J:/TB/Monthly Numbers/Ever Positive/All Positive EVER September 2022.xlsx") 
+firsttbpositivesmay<-("[FILE LOCATION]") 
 firsttbpositivesmay<-read_excel(firsttbpositivesmay)
 
 # check this month's results against the log
@@ -1917,7 +1917,7 @@ names(Octoberpriors2)[names(Octoberpriors2) == 'COLLDATE.x'] <- "COLLDATE"
 Octobernewfirstpositive <- Octoberpriors2 %>% select(c('FNAME','LNAME', 'DOB', 'COLLDATE', 'ID'))
 firsttbpositivesOctober <- bind_rows(firsttbpositivesmay, Octobernewfirstpositive)
 write_xlsx(firsttbpositivesOctober,
-           path = "J:/TB/Monthly Numbers/Ever Positive/All Positive EVER October 2022.xlsx")
+           path = "[FILE LOCATION]")
 
 ```
 
@@ -2063,7 +2063,7 @@ if(nrow(discordantsNovember3) > 0){
 ```{r November old or new?, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
 
 #pull in our log of everyone's first appearance
-firsttbpositivesmay<-("J:/TB/Monthly Numbers/Ever Positive/All Positive EVER October 2022.xlsx") 
+firsttbpositivesmay<-("[FILE LOCATION]") 
 firsttbpositivesmay<-read_excel(firsttbpositivesmay)
 
 # check this month's results against the log
@@ -2113,7 +2113,7 @@ names(Novemberpriors2)[names(Novemberpriors2) == 'COLLDATE.x'] <- "COLLDATE"
 Novembernewfirstpositive <- Novemberpriors2 %>% select(c('FNAME','LNAME', 'DOB', 'COLLDATE', 'ID'))
 firsttbpositivesNovember <- bind_rows(firsttbpositivesmay, Novembernewfirstpositive)
 write_xlsx(firsttbpositivesNovember,
-           path = "J:/TB/Monthly Numbers/Ever Positive/All Positive EVER November 2022.xlsx")
+           path = "[FILE LOCATION]")
 
 ```
 
@@ -2256,7 +2256,7 @@ if(nrow(discordantsDecember3) > 0){
 ```{r December old or new?, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
 
 #pull in our log of everyone's first appearance
-firsttbpositivesmay<-("J:/TB/Monthly Numbers/Ever Positive/All Positive EVER November 2022.xlsx") 
+firsttbpositivesmay<-("[FILE LOCATION]" 
 firsttbpositivesmay<-read_excel(firsttbpositivesmay)
 
 # check this month's results against the log
@@ -2306,7 +2306,7 @@ names(Decemberpriors2)[names(Decemberpriors2) == 'COLLDATE.x'] <- "COLLDATE"
 Decembernewfirstpositive <- Decemberpriors2 %>% select(c('FNAME','LNAME', 'DOB', 'COLLDATE', 'ID'))
 firsttbpositivesDecember <- bind_rows(firsttbpositivesmay, Decembernewfirstpositive)
 write_xlsx(firsttbpositivesDecember,
-           path = "J:/TB/Monthly Numbers/Ever Positive/All Positive EVER December 2022.xlsx")
+           path = "[FILE LOCATION]")
 
 ```
 
@@ -2351,7 +2351,7 @@ summary(freqlist(~ TAT, data = intsall2022))
 ```{r sixty-plus, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
 
 # Load in new data and filter to pos
-tb2020on2<-("J:/TB/Monthly Numbers/2022/12 December/Data/TB Master Report.xlsx")
+tb2020on2<-("[FILE LOCATION]")
 tb2020on2<-read_excel(tb2020on2, skip = 1)
 tb2020on2prelim2<- filter(tb2020on2, REPORT_STATE == "PRELIMINARY") #Pull out the old positives
 tb2020on2prelim2<- filter(tb2020on2prelim2, RESULT != "AFB NOT FOUND" & RESULT !="NEG") #Pull out the old positives
@@ -2372,10 +2372,10 @@ if(nrow(tb2020on2prelim2) > 0){
 }
 
 write_xlsx(tb2020on2prelim2,
-           path = "J:/TB/Monthly Numbers/2022/12 December/Reports/60 plus days old - 01-17.xlsx")
+           path = "[FILE LOCATION]")
 ```
 
-An Excel spreadsheet of these lists can be found at J:/TB/Monthly Numbers/2022/12 December/Reports/60 plus days old - 01-17.xlsx.
+An Excel spreadsheet of these lists can be found at "[FILE LOCATION]"
 
 
 
