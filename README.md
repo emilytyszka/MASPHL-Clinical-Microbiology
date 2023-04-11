@@ -1,4 +1,4 @@
-# MASPHL-Clin-Micro
+# MASPHL-Clinical-Microbiology
 
 ## Overview
 Analyses were conducted for the Massachusetts State Public Health Laboratory's Clinical Microbiology Laboratory. The laboratory receives clinical isolates of bacterial pathogens for routine monitoring, outbreak investigation, and sendout to the CDC.
