@@ -1,0 +1,185 @@
+---
+title: "CIDTs"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  classoption: landscape
+header-includes:
+- \usepackage{titling}
+- \usepackage{wrapfig}
+- \usepackage{lipsum}
+- \usepackage{pdflscape}
+- \pretitle{\begin{center} \includegraphics[width=2in,height=2in]{1200px-MassDPH_svg.png}\LARGE\\}
+- \posttitle{\end{center}}
+- \newcommand{\blandscape}{\begin{landscape}}
+- \newcommand{\elandscape}{\end{landscape}}
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+#Load in Libraries
+library(readxl)
+library(plyr)
+library(dplyr)
+library(arsenal)
+library(ggplot2)
+library(writexl)
+library(openxlsx)
+library(lubridate) 
+library(data.table)
+library(kableExtra)
+library(knitr)
+library(tidyr)
+library(janitor)
+library(scales)
+library(kableExtra)
+library(tinytex)
+library(yaml)
+library(ggpubr)
+library(cowplot)
+library(zoo)
+library(formattable)
+library(treemap)
+library(viridis)
+library(paletteer)
+library(rlist)
+library(magrittr)
+library(mosaic)
+library(tidyverse)
+
+```
+
+```{r, include = F}
+
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_knit$set(root.dir= normalizePath('..'))
+knitr::opts_chunk$set(error = FALSE)
+
+defOut <- knitr::knit_hooks$get("plot")  # save the default plot hook 
+knitr::knit_hooks$set(plot = function(x, options) {  # set new plot hook ...
+  x <- defOut(x, options)  # first apply the default hook
+  if(!is.null(options$wrapfigure)) {  # then, if option wrapfigure is given ...
+    # create the new opening string for the wrapfigure environment ...
+    wf <- sprintf("\\begin{wrapfigure}{%s}{%g\\textwidth}", options$wrapfigure[[1]], options$wrapfigure[[2]])
+    x  <- gsub("\\begin{figure}", wf, x, fixed = T)  # and replace the default one with it.
+    x  <- gsub("{figure}", "{wrapfigure}", x, fixed = T)  # also replace the environment ending
+  }
+  return(x)
+})
+```
+
+```{r data prep, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+# Pull in Isolates Data
+DataDirty<-read_excel(here::here("J:/Clinical Microbiology/Emily/2023","Isolates_Isolate.xlsx")) #data from 2022; very messy
+#I've tricked excel to pull the accession numbers from up top to the left column for each mini table. This means a lot of junk gets pulled to the left column with it, plus the mini tables' column headings remain. By pulling everything that has an accession that looks like an accession, we can hack away the junk leaving only the real data
+DataDirty <- DataDirty[grep("22EN", DataDirty$Curracn),]
+
+#Turn those blank original/subculture entries into subculture, as they should be
+DataDirty$`Original/Subculture` <- DataDirty$`Original/` %>% replace_na('Subculture')
+DataDirtySubc <- select(DataDirty, `Curracn`, `Original/Subculture`)
+view(DataDirty)
+# Now call in the Master Sheet and match by accession
+DataMaster<-read_excel(here::here("J:/Clinical Microbiology/Emily/2023","Master_Disease_Found.xlsx")) #data from 2022
+AllIsolates <- merge(DataMaster, DataDirtySubc, by.x = "Lab No", by.y = "Curracn", all.x = TRUE)
+view(AllIsolates)
+
+#Filter Down to the Organisms
+CIDTIsolates <- AllIsolates %>%
+       filter(`Dis Code Ordered` == "STEC" | `Dis Code Ordered` == "Salmonella" | `Dis Code Ordered` == "Campylobacter" | 
+                `Dis Code Ordered` == "Shigella" | `Dis Code Ordered` == "Vibrio" | `Dis Code Ordered` =="Yersinia") %>%
+       filter(`Original/Subculture`== "Original")
+CIDTIsolates <- CIDTIsolates[!duplicated(CIDTIsolates$`Lab No`),]
+CIDTIsolates<- CIDTIsolates[(CIDTIsolates$Submitter != 'STATE LABORATORY INSTITUTE'),]
+
+#Bask in the statisfaction of a job well done
+view(CIDTIsolates)
+```
+
+
+# 5. Earlier in question 1, you indicated your laboratory receives results on specimens that have tested positive for enteric pathogens from a CIDT test. 
+
+## a. Please estimate the total number of bacterial CIDT submissions received in the laboratory.
+
+Original (not subculture) isolates, filtered down to the selected organisms.
+```{r 5a, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+Recieved<-as.data.frame(table(CIDTIsolates$`Dis Code Ordered`))
+names(Recieved)[1]<-"Organism"
+names(Recieved)[2]<-"Count"
+
+Recieved <- Recieved %>% 
+  adorn_totals("row")
+
+kbl(Recieved, booktabs = T) %>% kable_styling(full_width = F) %>%
+  kable_styling(font_size = 12)%>%
+  kable_styling(latex_options = "HOLD_position")
+
+```
+
+## b. Can you estimate the percentage received as isolates which originally tested positive by CIDT?
+
+Isolates from above, broken up by results (positive, negative)
+```{r 5b, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+Positivity<-as.data.frame(table(CIDTIsolates$`Dis Code Ordered`, CIDTIsolates$Indication))
+Positivity<-reshape(Positivity, timevar = 'Var2', idvar = 'Var1', direction = 'wide') #reshape
+
+names(Positivity)[1]<-"Organism"
+names(Positivity)[2]<-"Negative"
+names(Positivity)[3]<-"Positive"
+
+Positivity <- Positivity %>% 
+  adorn_totals("row")
+
+#Percent column
+percent <- function(x, digits = 2, format = "f", ...) {
+  paste0(formatC(100 * x, format = format, digits = digits, ...), "%")
+}
+Positivity$`% Positive` <- percent(Positivity$Positive/(Positivity$Negative + Positivity$Positive))
+
+
+#Print
+kbl(Positivity, booktabs = T) %>% kable_styling(full_width = F) %>%
+  kable_styling(font_size = 12)%>%
+  kable_styling(latex_options = "HOLD_position")
+
+```
+## c. Can you estimate the percentage received as primary specimens (raw stool and/or broths or stool in Cary-Blair broth) which originally tested positive by a CIDT?
+
+Repeat of 5a, but filtering down only to isolates where "source" was listed as stool (no stool-in-broth isolates in our data )
+```{r 5c, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+CIDTIsolatesStool <- CIDTIsolates %>% filter(Source=="Stool")
+
+StoolOnly<-as.data.frame(table(CIDTIsolatesStool$`Dis Code Ordered`))
+names(StoolOnly)[1]<-"Organism"
+names(StoolOnly)[2]<-"Count"
+
+StoolOnly <- StoolOnly %>% 
+  adorn_totals("row")
+
+kbl(StoolOnly, booktabs = T) %>% kable_styling(full_width = F) %>%
+  kable_styling(font_size = 12)%>%
+  kable_styling(latex_options = "HOLD_position")
+
+```
+
+# 16. What is the median number of days for CIDT positive specimens to get to the PHL within your jurisdiction? (Date of collection to date of receipt at PHL)
+```{r 16, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+CIDTIsolates$coldate <- as.POSIXct(CIDTIsolates$"Collected", format="%m-%d-%Y", tz = "UTC")
+CIDTIsolates$recvdate <- as.POSIXct(CIDTIsolates$"Dt Recvd", format="%m-%d-%Y", tz = "UTC")
+CIDTIsolates$TAT <- as.numeric(difftime(CIDTIsolates$recvdate, CIDTIsolates$coldate, units = "days"))
+CIDTIsolates$TAT <- as.numeric(CIDTIsolates$TAT)
+
+TAT <- CIDTIsolates %>%
+  dplyr::group_by(`Dis Code Ordered`) %>% dplyr::summarise(`Mean TAT (Days)` = mean(TAT))
+
+kbl(TAT, booktabs = T) %>% kable_styling(full_width = F) %>%
+  kable_styling(font_size = 12)%>%
+  kable_styling(latex_options = "HOLD_position")
+
+```
