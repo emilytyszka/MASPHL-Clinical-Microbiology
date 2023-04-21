@@ -1,0 +1,204 @@
+---
+title: "OutbreakNet Metrics 2022"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  classoption: landscape
+header-includes:
+- \usepackage{titling}
+- \usepackage{wrapfig}
+- \usepackage{lipsum}
+- \usepackage{pdflscape}
+- \pretitle{\begin{center} \includegraphics[width=2in,height=2in]{1200px-MassDPH_svg.png}\LARGE\\}
+- \posttitle{\end{center}}
+- \newcommand{\blandscape}{\begin{landscape}}
+- \newcommand{\elandscape}{\end{landscape}}
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+#Load in Libraries
+library(readxl)
+library(plyr)
+library(dplyr)
+library(arsenal)
+library(ggplot2)
+library(writexl)
+library(openxlsx)
+library(lubridate) 
+library(data.table)
+library(kableExtra)
+library(knitr)
+library(tidyr)
+library(janitor)
+library(scales)
+library(kableExtra)
+library(tinytex)
+library(yaml)
+library(ggpubr)
+library(cowplot)
+library(zoo)
+library(formattable)
+library(treemap)
+library(viridis)
+library(paletteer)
+library(rlist)
+library(magrittr)
+library(mosaic)
+library(tidyverse)
+
+```
+
+```{r, include = F}
+
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_knit$set(root.dir= normalizePath('..'))
+knitr::opts_chunk$set(error = FALSE)
+
+defOut <- knitr::knit_hooks$get("plot")  # save the default plot hook 
+knitr::knit_hooks$set(plot = function(x, options) {  # set new plot hook ...
+  x <- defOut(x, options)  # first apply the default hook
+  if(!is.null(options$wrapfigure)) {  # then, if option wrapfigure is given ...
+    # create the new opening string for the wrapfigure environment ...
+    wf <- sprintf("\\begin{wrapfigure}{%s}{%g\\textwidth}", options$wrapfigure[[1]], options$wrapfigure[[2]])
+    x  <- gsub("\\begin{figure}", wf, x, fixed = T)  # and replace the default one with it.
+    x  <- gsub("{figure}", "{wrapfigure}", x, fixed = T)  # also replace the environment ending
+  }
+  return(x)
+})
+```
+
+```{r setup and summary, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+# Pull in Isolates Data
+DataDirty<-read_excel(here::here("J:/Clinical Microbiology/Emily/2023","Isolates_Isolate.xlsx")) #data from 2022; very messy
+#I've tricked excel to pull the accession numbers from up top to the left column for each mini table. This means a lot of junk gets pulled to the left column with it, plus the mini tables' column headings remain. By pulling everything that has an accession that looks like an accession, we can hack away the junk leaving only the real data
+DataDirty <- DataDirty[grep("22EN", DataDirty$Curracn),]
+
+#Turn those blank original/subculture entries into subculture, as they should be
+DataDirty$`Original/Subculture` <- DataDirty$`Original/` %>% replace_na('Subculture')
+DataDirtySubc <- select(DataDirty, `Curracn`, `Original/Subculture`)
+view(DataDirty)
+# Now call in the Master Sheet and match by accession
+DataMaster<-read_excel(here::here("J:/Clinical Microbiology/Emily/2023","Master_Disease_Found.xlsx")) #data from 2022
+AllIsolates <- merge(DataMaster, DataDirtySubc, by.x = "Lab No", by.y = "Curracn", all.x = TRUE)
+
+#Filter Down to the Organisms - hopefully our isolates cover all the organisms we want!
+OutbreakNetIsolates <- AllIsolates %>%
+       filter(`Dis Code Ordered` == "Salmonella" | `Dis Code Ordered` == "STEC" | `Dis Code Ordered` == "Listeria" | 
+                `Dis Code Ordered` == "Shigella" | `Dis Code Ordered` == "Campylobacter") 
+OutbreakNetIsolates <- OutbreakNetIsolates[!duplicated(OutbreakNetIsolates$`Lab No`),]
+Screening <- AllIsolates %>%
+       filter(`Dis Code Ordered` == "Screening")
+
+OutbreakNetIsolates<- OutbreakNetIsolates[(OutbreakNetIsolates$Submitter != 'STATE LABORATORY INSTITUTE'),]
+
+#Bask in the statisfaction of a job well done
+view(AllIsolates)
+```
+
+
+# 1: Measures for laboratory surveillance
+
+## a: Total number of SSL(SC) isolates and isolate-yielding specimens submitted to or recovered at the Public Health Lab (PHL)
+
+- Intent: To allow evaluation of the burden of isolate submissions and testing at the PHL.
+
+- Note: This is the total number, not just primary isolates.
+
+```{r metric 1a, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+Recieved<-as.data.frame(table(OutbreakNetIsolates$`Dis Code Ordered`))
+names(Recieved)[1]<-"Organism"
+names(Recieved)[2]<-"Count"
+
+Recieved <- Recieved %>% 
+  adorn_totals("row")
+
+kbl(Recieved, booktabs = T) %>% kable_styling(full_width = F) %>%
+  kable_styling(font_size = 12)%>%
+  kable_styling(latex_options = "HOLD_position")
+
+```
+
+## b: Number of SSL(SC) primary isolates or isolate-yielding specimens
+
+- Intent: To allow evaluation of laboratory testing associated with the first or representative isolate or sample for each clinical case or testing unit for non-human isolates versus duplicate isolates from repeat testing or sampling protocols.
+
+- Note: If multiple samples are tested from the same source, the primary isolates from each of the samples for which you completed testing can be counted.
+
+```{r metric 1b, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+view(OutbreakNetIsolates)
+OutbreakNetIsolates$FLNAME <- paste(OutbreakNetIsolates$Lname,
+                                   OutbreakNetIsolates$Fname,
+                                   OutbreakNetIsolates$Dob)
+OutbreakNetIsolates2<- 
+  OutbreakNetIsolates[order(OutbreakNetIsolates$FLNAME),]
+OutbreakNetIsolates2 <- OutbreakNetIsolates2[!duplicated(OutbreakNetIsolates2$FLNAME), ]
+
+RecievedIsolates2<-as.data.frame(table(OutbreakNetIsolates2$`Dis Code Ordered`, OutbreakNetIsolates2$`Original/Subculture`))
+RecievedIsolates2<-reshape(RecievedIsolates2, timevar = 'Var2', idvar = 'Var1', direction = 'wide') #reshape
+names(RecievedIsolates2)[1]<-"Organism"
+names(RecievedIsolates2)[2]<-"Original"
+names(RecievedIsolates2)[3]<-"Subculture"
+
+RecievedIsolates3 <- RecievedIsolates2%>% 
+  adorn_totals(c("row", "col"))
+
+kbl(RecievedIsolates3, booktabs = T) %>% kable_styling(full_width = F) %>%
+  kable_styling(font_size = 12)%>%
+  kable_styling(latex_options = "HOLD_position")
+
+```
+
+
+# 2: Measures for SSL(SC) clinical specimens or samples received at PHL
+
+## a: Total number of preliminary positive SSL(SC) clinical specimens or samples received at PHL (regardless of if isolate-yielding or not)
+
+- Intent: To allow evaluation of the submissions of presumptive positive clinical specimens (i.e. CIDTs) to the PHL.
+
+```{r metric 2a, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+# Find all the screening positives
+ScreeningResults<-as.data.frame(table(Screening$`Dis Code Found`, Screening$`Indication`))
+ScreeningResults<-reshape(ScreeningResults, timevar = 'Var2', idvar = 'Var1', direction = 'wide') #reshape
+ScreeningResults1 <- ScreeningResults %>% mutate(Organism =
+  fct_collapse(Var1,
+"Campylobacter" = "Campylobacter jejuni",
+"STEC" = c("E.coli non-O157", "E.coli O157:H7"),
+"Shigella" = c("Shigella boydii", "Shigella flexneri", "Shigella sonnei"), 
+"Salmonella" = "Salmonella species"
+  )) %>% select(Organism, Freq.Positive)
+ScreeningResults2<- ddply(ScreeningResults1, .(Organism), summarize, ScreenedPositive=sum(Freq.Positive))
+ScreeningResults2 <- ScreeningResults2 %>% filter(Organism == "Campylobacter" | Organism == "STEC" | Organism == "Shigella" | Organism =="Salmonella")
+ScreeningResults2[is.na(ScreeningResults2)] <- 0
+
+# Find all the test positives
+PositiveNegative<-as.data.frame(table(OutbreakNetIsolates2$`Dis Code Ordered`, OutbreakNetIsolates2$`Indication`))
+PositiveNegative<-reshape(PositiveNegative, timevar = 'Var2', idvar = 'Var1', direction = 'wide') #reshape
+names(PositiveNegative)[1]<-"Organism"
+names(PositiveNegative)[2]<-"Negative"
+names(PositiveNegative)[3]<-"Positive"
+
+#Merge!
+PositiveNegativeTot <- merge(PositiveNegative, ScreeningResults2, by.x = "Organism", by.y = "Organism", all.x = TRUE)
+PositiveNegativeTot[is.na(PositiveNegativeTot)] <- 0
+PositiveNegativeTot <- PositiveNegativeTot %>% select(Organism, Positive, ScreenedPositive)
+PositiveNegativeTot$Total <- PositiveNegativeTot$Positive + PositiveNegativeTot$ScreenedPositive
+
+kbl(PositiveNegativeTot, booktabs = T) %>% kable_styling(full_width = F) %>%
+  kable_styling(font_size = 12)%>%
+  kable_styling(latex_options = "HOLD_position")
+
+```
+
+## b: Total number of isolate yielding SSL(SC) clinical specimens or samples received at PHL
+
+- Intent: To allow evaluation of the outcome of clinical specimen testing.
+
+- Note: Could be used to identify gaps in submission protocols if a high proportion of specimens or samples are not viable; this also indicates the utility of testing multiple clinical specimens to try to identify cases that might otherwise be missed if only using isolate submissions.
+
+[Section TBD]
