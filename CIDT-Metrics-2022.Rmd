@@ -1,5 +1,5 @@
 ---
-title: "CIDTs"
+title: "CIDT Metrics"
 date: "`r Sys.Date()`"
 output:
   pdf_document: default
@@ -73,7 +73,7 @@ knitr::knit_hooks$set(plot = function(x, options) {  # set new plot hook ...
 ```{r data prep, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
 
 # Pull in Isolates Data
-DataDirty<-read_excel(here::here("J:/Clinical Microbiology/Emily/2023","Isolates_Isolate.xlsx")) #data from 2022; very messy
+DataDirty<-read_excel(here::here("[Location]","Isolates_Isolate.xlsx")) #data from 2022; very messy
 #I've tricked excel to pull the accession numbers from up top to the left column for each mini table. This means a lot of junk gets pulled to the left column with it, plus the mini tables' column headings remain. By pulling everything that has an accession that looks like an accession, we can hack away the junk leaving only the real data
 DataDirty <- DataDirty[grep("22EN", DataDirty$Curracn),]
 
@@ -82,7 +82,7 @@ DataDirty$`Original/Subculture` <- DataDirty$`Original/` %>% replace_na('Subcult
 DataDirtySubc <- select(DataDirty, `Curracn`, `Original/Subculture`)
 view(DataDirty)
 # Now call in the Master Sheet and match by accession
-DataMaster<-read_excel(here::here("J:/Clinical Microbiology/Emily/2023","Master_Disease_Found.xlsx")) #data from 2022
+DataMaster<-read_excel(here::here("[Location]","Master_Disease_Found.xlsx")) #data from 2022
 AllIsolates <- merge(DataMaster, DataDirtySubc, by.x = "Lab No", by.y = "Curracn", all.x = TRUE)
 view(AllIsolates)
 
