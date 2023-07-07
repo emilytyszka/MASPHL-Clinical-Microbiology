@@ -1,7 +1,7 @@
 ---
-title: "GC Subcultures"
+title: "Gonorrhea Abstract - STI & HIV 2023 World Congress"
 output: html_document
-date: '2023-02-03'
+date: '2023-07-06'
 ---
 
 ```{r prep, include = FALSE,, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
@@ -30,10 +30,10 @@ library(tidyverse)
 
 ```{r pull in data, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
 
-GC23<-read_excel("J:/Clinical Microbiology/Emily/GC Subcultures/Data/Data-2023.xlsx") #Isolates from 01/01 to 05/25
-GC22<-read_excel("J:/Clinical Microbiology/Emily/GC Subcultures/Data/Data-2022.xlsx") #Isolates for all of 2022
+GC23<-read_excel("[Location]") #Isolates from 01/01 to 05/25
+GC22<-read_excel("[Location]") #Isolates for all of 2022
 
-BigSheet<-read_excel("J:/Clinical Microbiology/Emily/GC Subcultures/Data/BigDataSheet.xlsx") # Master Disease Found 2022-2023
+BigSheet<-read_excel("[Location]") # Master Disease Found 2022-2023
 
 view(BigSheet)
 ```
@@ -156,7 +156,7 @@ GCSummary <- GCSummary[!duplicated(GCSummary), ]
 view(GCSummary)
 
 
-write_xlsx(GCSummary, "J:/Clinical Microbiology/Emily/GC Subcultures/GC-Summary-2022-2023-SUBSET-NEW.xlsx")
+write_xlsx(GCSummary, "[Location]/GC-Summary-2022-2023-SUBSET-NEW.xlsx")
 ```
 
 
@@ -176,7 +176,7 @@ AllSubmitters$SentGC <- AllSubmitters$Provider %in% GCSubmitters$Provider
 AllSubmitters <- merge(AllSubmitters, Addresses, by.x = "Provider", by.y = "Submitter", all.x = TRUE)
 AllSubmitters <- AllSubmitters[!duplicated(AllSubmitters), ]
 
-write_xlsx(AllSubmitters, "J:/Clinical Microbiology/Emily/GC Subcultures/ProviderSentGC.xlsx")
+write_xlsx(AllSubmitters, "[Location]/ProviderSentGC.xlsx")
   
 ```
 
