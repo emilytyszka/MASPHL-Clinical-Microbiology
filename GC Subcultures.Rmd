@@ -1,0 +1,183 @@
+---
+title: "GC Subcultures"
+output: html_document
+date: '2023-02-03'
+---
+
+```{r prep, include = FALSE,, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+#Call libraries  
+library(readxl)
+library(dplyr)
+library(tidyverse)
+library(plyr)
+library(writexl)
+library(lubridate)
+library(stargazer)
+library(data.table)
+library(knitr)
+library(tinytex)
+library(data.table)
+library(quantmod)
+library(janitor)
+library(viridis)
+library(arsenal)
+library(magrittr)
+library(tidyverse)
+```
+
+
+
+```{r pull in data, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+GC23<-read_excel("J:/Clinical Microbiology/Emily/GC Subcultures/Data/Data-2023.xlsx") #Isolates from 01/01 to 05/25
+GC22<-read_excel("J:/Clinical Microbiology/Emily/GC Subcultures/Data/Data-2022.xlsx") #Isolates for all of 2022
+
+BigSheet<-read_excel("J:/Clinical Microbiology/Emily/GC Subcultures/Data/BigDataSheet.xlsx") # Master Disease Found 2022-2023
+
+view(BigSheet)
+```
+
+```{r tame the isolates report, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+### Isolates Report is ugly - it's meant for humans to read, not a computer. It is needed, however, since the Master Disease Found leaves out if samples are culture/subculture. So let's clean it.
+
+### Main issues to fix:
+#     1. Top of report has "ISOLATE REPORT" in massive text instead of column headers. Will need to assign column names manually. Thankfully there are only 8, counting accession. 
+#     2. Accession is not in-line and has no column. It's in column 1 sitting over "provider" - we will move it to sit next to its respective entry
+#     3. Merged cells as column headers, repeating with each isolate in a new block - since we assigned column headers manually, we can just drop anything that isn't a data row to clean this
+#     4. Original/subculture has blanks for subculture samples - assign anything not marked as "original" with "subculture"
+
+
+# 1 - Assign column names manually including accession
+## Create accession column on far left side that is a copy of the first column
+GC23 <-  cbind(Accession = GC23$`ISOLATE REPORT`, GC23)
+## Assign new names to other columns
+names(GC23)[2]<-"Provider"
+names(GC23)[3]<-"Original/Subculture"
+names(GC23)[4]<-"Date Received"
+names(GC23)[5]<-"Result"
+names(GC23)[6]<-"Patient Name"
+names(GC23)[7]<-"DOB"
+names(GC23)[8]<-"Date Reported"
+
+# 2 - Move accession values into the Accession column
+## Because the accession column is a copy of what is now the "provider" column, the accession number is simply floating 3 rows over where it should be - if moved down, it will sit next to its corresponding entry
+GC23$Accession <- ifelse(substr(GC23$Accession, 1,4) =="23EN", GC23$Accession, NA) # revert anything that doesn't start with "22EN" to NA
+GC23$Accession <- na.locf(GC23$Accession) #take the NAs and fill them in by pulling down data from above - and it since we filtered, this will be the corresponding accession
+
+# 3 - Hard part is over! Filter out anything that isn't a data row. I'm going to use the DOB column - drop anything that says "DOB" or is an NA
+GC23 <- GC23 %>% filter(DOB != "DOB") #this also dropped NAs for some reason... fine enough I guess
+
+# 4 - Finally, replace blanks in the Original/Subculture field with "Subculture"
+GC23$`Original/Subculture` <-ifelse(is.na(GC23$`Original/Subculture`)==TRUE,"Subculture", GC23$`Original/Subculture`)
+
+# Now it's clean!
+GC23 <- GC23[(GC23$Provider != 'STATE LABORATORY INSTITUTE'), ] #all received
+#filter: 1/19 – 5/18
+GC23 <- GC23[GC23$`Date Received` >= "01-19-2023" & GC23$`Date Received` <= "05-18-2023", ]
+
+GC23 <- merge(GC23, BigSheet, by.x = "Accession", by.y = "Lab No", all.x = TRUE)
+
+GC23summary<-as.data.frame(table(GC23$Provider, GC23$`Original/Subculture`)) #all received
+GC23summary<-reshape(GC23summary, idvar= 'Var1', timevar='Var2', direction="wide")
+names(GC23summary)[1]<-'Provider'
+names(GC23summary)[2]<-'Original 2023'
+names(GC23summary)[3]<-'Subculture 2023'
+view(GC23)
+
+
+
+
+```
+
+```{r tame the isolates report, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+### Isolates Report is ugly - it's meant for humans to read, not a computer. It is needed, however, since the Master Disease Found leaves out if samples are culture/subculture. So let's clean it.
+
+### Main issues to fix:
+#     1. Top of report has "ISOLATE REPORT" in massive text instead of column headers. Will need to assign column names manually. Thankfully there are only 8, counting accession. 
+#     2. Accession is not in-line and has no column. It's in column 1 sitting over "provider" - we will move it to sit next to its respective entry
+#     3. Merged cells as column headers, repeating with each isolate in a new block - since we assigned column headers manually, we can just drop anything that isn't a data row to clean this
+#     4. Original/subculture has blanks for subculture samples - assign anything not marked as "original" with "subculture"
+
+
+# 1 - Assign column names manually including accession
+## Create accession column on far left side that is a copy of the first column
+GC22 <-  cbind(Accession = GC22$`ISOLATE REPORT`, GC22)
+## Assign new names to other columns
+names(GC22)[2]<-"Provider"
+names(GC22)[3]<-"Original/Subculture"
+names(GC22)[4]<-"Date Received"
+names(GC22)[5]<-"Result"
+names(GC22)[6]<-"Patient Name"
+names(GC22)[7]<-"DOB"
+names(GC22)[8]<-"Date Reported"
+
+# 2 - Move accession values into the Accession column
+## Because the accession column is a copy of what is now the "provider" column, the accession number is simply floating 3 rows over where it should be - if moved down, it will sit next to its corresponding entry
+GC22$Accession <- ifelse(substr(GC22$Accession, 1,4) =="22EN", GC22$Accession, NA) # revert anything that doesn't start with "22EN" to NA
+GC22$Accession <- na.locf(GC22$Accession) #take the NAs and fill them in by pulling down data from above - and it since we filtered, this will be the corresponding accession
+
+# 3 - Hard part is over! Filter out anything that isn't a data row. I'm going to use the DOB column - drop anything that says "DOB" or is an NA
+GC22 <- GC22 %>% filter(DOB != "DOB") #this also dropped NAs for some reason... fine enough I guess
+
+# 4 - Finally, replace blanks in the Original/Subculture field with "Subculture"
+GC22$`Original/Subculture` <-ifelse(is.na(GC22$`Original/Subculture`)==TRUE,"Subculture", GC22$`Original/Subculture`)
+
+# Now it's clean!
+GC22 <- GC22[(GC22$Provider != 'STATE LABORATORY INSTITUTE'), ] #all received
+
+
+#filter: 1/19 – 5/18
+GC22 <- GC22[GC22$`Date Received` >= "01-19-2022" & GC22$`Date Received` <= "05-18-2022", ]
+
+GC22 <- merge(GC22, BigSheet, by.x = "Accession", by.y = "Lab No", all.x = TRUE)
+GC22$FullAddress <- paste(GC22$`Submitter Adress`,",", GC22$`Submitter City`, ",",GC22$`Sub Zip`)
+Addresses <- GC22 %>% select(Submitter, FullAddress)
+
+GC22summary<-as.data.frame(table(GC22$Provider, GC22$`Original/Subculture`)) #all received
+GC22summary<-reshape(GC22summary, idvar= 'Var1', timevar='Var2', direction="wide")
+names(GC22summary)[1]<-'Provider'
+names(GC22summary)[2]<-'Original 2022'
+names(GC22summary)[3]<-'Subculture 2022'
+view(GC22summary)
+
+
+#now merge the two
+GCSummary<- merge(GC22summary, GC23summary, by = "Provider", all=TRUE)
+GCSummary[is.na(GCSummary)] <- 0
+BigSheet$FullAddress <- paste(BigSheet$`Submitter Adress`,",", BigSheet$`Submitter City`, ",",BigSheet$`Sub Zip`)
+Addresses <- BigSheet %>% select(Submitter, FullAddress)
+GCSummary <- merge(GCSummary, Addresses, by.x = "Provider", by.y = "Submitter", all.x = TRUE)
+GCSummary$FullAddress <- str_to_upper(GCSummary$FullAddress)
+GCSummary <- GCSummary[!duplicated(GCSummary), ]
+
+view(GCSummary)
+
+
+write_xlsx(GCSummary, "J:/Clinical Microbiology/Emily/GC Subcultures/GC-Summary-2022-2023-SUBSET-NEW.xlsx")
+```
+
+
+
+
+```{r submitters vs GC list, echo=FALSE , warning=FALSE, message=FALSE, results = "asis", type = 'latex'}
+
+GCSubmitters <- as.data.frame(unique(GCSummary$Provider) )
+AllSubmitters <- as.data.frame(unique(BigSheet$Submitter) )
+
+view(AllSubmitters)
+names(AllSubmitters)[1]<-'Provider'
+names(GCSubmitters)[1]<-'Provider'
+
+
+AllSubmitters$SentGC <- AllSubmitters$Provider %in% GCSubmitters$Provider
+AllSubmitters <- merge(AllSubmitters, Addresses, by.x = "Provider", by.y = "Submitter", all.x = TRUE)
+AllSubmitters <- AllSubmitters[!duplicated(AllSubmitters), ]
+
+write_xlsx(AllSubmitters, "J:/Clinical Microbiology/Emily/GC Subcultures/ProviderSentGC.xlsx")
+  
+```
+
+
